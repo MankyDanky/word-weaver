@@ -90,7 +90,7 @@ export default function Dashboard() {
     });
   };
   
-  // Status badge component
+  // Status badge component with improved styling to prevent text wrapping
   const StatusBadge = ({ status }: { status: Essay['status'] }) => {
     let colorClass = '';
     switch (status) {
@@ -104,9 +104,13 @@ export default function Dashboard() {
         colorClass = 'bg-green-100 text-green-800';
         break;
     }
+    
+    // Determine proper display text and adjust styling accordingly
+    const displayText = status === 'in-progress' ? 'In Progress' : status.charAt(0).toUpperCase() + status.slice(1);
+    
     return (
-      <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${colorClass}`}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+      <span className={`text-xs font-medium px-3 py-0.5 rounded-full whitespace-nowrap min-w-[90px] text-center inline-flex items-center justify-center ${colorClass}`}>
+        {displayText}
       </span>
     );
   };

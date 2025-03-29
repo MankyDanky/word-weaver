@@ -116,9 +116,16 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
     }
   };
 
-  // Handle complete/publish button
-  const handlePublish = () => {
-    handleSave('complete');
+
+  // Handle status change
+  const handleStatusChange = (newStatus: Essay['status']) => {
+    if (newStatus === essay?.status || isSaving) return;
+    
+    // Show visual feedback immediately
+    setEssay(prev => prev ? {...prev, status: newStatus} : null);
+    
+    // Save the change to the server
+    handleSave(newStatus);
   };
 
   // Format Markdown to HTML
@@ -257,17 +264,48 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
                   </div>
                   
                   <div>
-                    <h3 className="text-sm font-medium text-gray-500">Status</h3>
-                    <div className="inline-block mt-1">
-                      <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${
-                        essay.status === 'draft'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : essay.status === 'in-progress'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-green-100 text-green-800'
-                      }`}>
-                        {essay.status.charAt(0).toUpperCase() + essay.status.slice(1)}
-                      </span>
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-medium text-gray-500">Status</h3>
+                      {isSaving && (
+                        <div className="inline-block h-4 w-4">
+                          <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-indigo-500"></div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {/* Status toggle buttons */}
+                      <button
+                        onClick={() => handleStatusChange('draft')}
+                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                          essay.status === 'draft'
+                            ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        Draft
+                      </button>
+                      
+                      <button
+                        onClick={() => handleStatusChange('in-progress')}
+                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                          essay.status === 'in-progress'
+                            ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        In Progress
+                      </button>
+                      
+                      <button
+                        onClick={() => handleStatusChange('complete')}
+                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                          essay.status === 'complete'
+                            ? 'bg-green-100 text-green-800 border border-green-200'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        Complete
+                      </button>
                     </div>
                   </div>
                   
@@ -319,20 +357,6 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
                         <span className="font-bold text-xs">H3</span>
                       </button>
                     </div>
-                  </div>
-                  
-                  <div className="pt-4 border-t border-gray-100">
-                    <button
-                      onClick={handlePublish}
-                      disabled={isSaving || essay.status === 'complete'}
-                      className={`w-full py-2 px-4 rounded-md text-sm font-medium text-white ${
-                        isSaving || essay.status === 'complete'
-                          ? "bg-indigo-300 cursor-not-allowed"
-                          : "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
-                      }`}
-                    >
-                      {essay.status === 'complete' ? 'Published' : 'Publish'}
-                    </button>
                   </div>
                 </div>
               </div>
