@@ -191,7 +191,7 @@ async function generateEssay(
     }
     
     const data = await response.json();
-    
+
     return { 
       success: true, 
       content: data.choices[0].message.content,

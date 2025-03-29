@@ -179,10 +179,10 @@ export default function NewEssay() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          topic,
-          thesis,
+          topic: topic,
+          thesis: thesis,
           arguments: filteredArguments,
-          wordCount,
+          wordCount: wordCount,
         })
       });
       
