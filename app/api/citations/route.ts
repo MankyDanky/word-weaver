@@ -27,10 +27,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { citations } = body;
+    if (!body.style || !['MLA', 'APA', 'Chicago'].includes(body.style)) {
+      return NextResponse.json(
+        { error: 'A valid citation style (MLA, APA, Chicago) is required' },
+        { status: 400 }
+      );
+    }
+
+    const { citations, style } = body;
 
     // Generate works cited using Perplexity SONAR model
-    const worksCitedResult = await generateWorksCited(citations);
+    const worksCitedResult = await generateWorksCited(citations, style);
 
     if (!worksCitedResult.success) {
       return NextResponse.json(
@@ -53,7 +60,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Function to generate works cited using Perplexity SONAR model
-async function generateWorksCited(citations: string[]) {
+async function generateWorksCited(citations: string[], style: string) {
   try {
     // Get the current date in a readable format (e.g., "March 29, 2025")
     const currentDate = new Date().toLocaleDateString('en-US', {
@@ -64,11 +71,11 @@ async function generateWorksCited(citations: string[]) {
 
     // Create a detailed prompt for generating works cited
     const promptContent = `
-    Generate a properly formatted works cited section for the following citations in MLA format:
+    Generate a properly formatted works cited section for the following citations in ${style} format:
     ${citations.map((citation, index) => `${index + 1}. ${citation}`).join('\n')}
 
     Requirements:
-    - Each citation must be formatted in MLA style
+    - Each citation must be formatted in ${style} style
     - Include the header "Works Cited" at the top in bold
     - Each line should begin with numbers in the order provided, the order is VERY IMPORTANT
     - Include the "date of access" field as "${currentDate}" for each citation

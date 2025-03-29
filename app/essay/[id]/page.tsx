@@ -29,6 +29,7 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
   const [wordCount, setWordCount] = useState(0);
   const [activeEditorTab, setActiveEditorTab] = useState<'edit' | 'preview' | 'citations'>('edit');
   const [isAppendingWorksCited, setIsAppendingWorksCited] = useState(false);
+  const [citationStyle, setCitationStyle] = useState('MLA'); // Default to MLA
   const previewBottomRef = useRef<HTMLDivElement | null>(null);
   
   // Fetch essay data
@@ -214,7 +215,7 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
       const response = await fetch('/api/citations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ citations: essay.citations }),
+        body: JSON.stringify({ citations: essay.citations, style: citationStyle }),
       });
 
       if (!response.ok) {
@@ -501,6 +502,24 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
                               </li>
                             ))}
                           </ul>
+
+                          {/* Dropdown for citation style */}
+                          <div className="mt-6">
+                            <label htmlFor="citation-style" className="block text-sm font-medium text-gray-700 mb-2">
+                              Citation Style
+                            </label>
+                            <select
+                              id="citation-style"
+                              value={citationStyle}
+                              onChange={(e) => setCitationStyle(e.target.value)}
+                              className="mt-1 block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2"
+                            >
+                              <option value="MLA">MLA</option>
+                              <option value="APA">APA</option>
+                              <option value="Chicago">Chicago</option>
+                            </select>
+                          </div>
+
                           {/* Append Works Cited Button */}
                           <button
                             onClick={handleAppendWorksCited}
@@ -552,7 +571,7 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
                     onClick={() => handleSave()}
                     className="text-indigo-600 hover:text-indigo-800 font-medium"
                   >
-                    {isSaving ? 'Saving...' : 'Save Draft'}
+                    {isSaving ? 'Saving...' : 'Save'}
                   </button>
                 </div>
               </div>
