@@ -3,6 +3,15 @@
 WordWeaverAI is a sophisticated essay writing and editing platform that leverages AI to help students and writers create, refine, and format high-quality essays. Built during Bear Hacks, this application streamlines the entire essay writing workflow from initial drafting to final formatting.
 
 ## Preview Images
+<img width="1463" alt="Screenshot 2025-03-29 at 6 02 54 PM" src="https://github.com/user-attachments/assets/ae50a797-cb00-45a2-819c-f30e32170a5b" />
+<img width="1470" alt="Screenshot 2025-03-29 at 6 03 08 PM" src="https://github.com/user-attachments/assets/3e2edbbb-48d2-41ce-9d6d-d41502a43bcf" />
+<img width="1470" alt="Screenshot 2025-03-29 at 6 03 21 PM" src="https://github.com/user-attachments/assets/c9cc92cb-f67b-4fec-a333-2c5e19cc26a8" />
+<img width="1470" alt="Screenshot 2025-03-29 at 6 03 30 PM" src="https://github.com/user-attachments/assets/2f4462df-fa4b-47d5-a56e-471c9996828d" />
+<img width="1459" alt="Screenshot 2025-03-29 at 6 13 41 PM" src="https://github.com/user-attachments/assets/4b10a22b-8c6d-4c45-bc61-9bf380cf961d" />
+<img width="1466" alt="Screenshot 2025-03-29 at 6 04 16 PM" src="https://github.com/user-attachments/assets/2a3890d0-1cd8-4986-86ae-0f91dbb300bf" />
+<img width="1470" alt="Screenshot 2025-03-29 at 6 04 32 PM" src="https://github.com/user-attachments/assets/86d76f2f-a6eb-4ff8-98ef-ffdadebafa7f" />
+<img width="1466" alt="Screenshot 2025-03-29 at 6 04 43 PM" src="https://github.com/user-attachments/assets/d4a87dfd-7047-4b85-8ffc-d77c7d33ebe8" />
+<img width="1466" alt="Screenshot 2025-03-29 at 6 04 56 PM" src="https://github.com/user-attachments/assets/8d2900d9-83ef-448f-b9be-e5fe484c7aa9" />
 
 ## Features
 
