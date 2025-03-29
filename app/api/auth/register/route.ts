@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   await dbConnect();
   
   try {
-    const { email, password } = await request.json(); // No longer expecting name
+    const { email, password } = await request.json(); 
     
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -22,7 +22,6 @@ export async function POST(request: Request) {
       );
     }
     
-    // Create new user (no name field)
     const user = await User.create({
       email,
       password
