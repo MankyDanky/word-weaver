@@ -45,7 +45,29 @@ export default function NewEssay() {
       }
 
       .scribble {
-        animation: write 2.5s linear infinite alternate;
+        stroke-dasharray: 240;
+        stroke-dashoffset: 240;
+        animation: write 2s linear forwards;
+      }
+
+      .scribble:nth-child(1) {
+        animation-delay: 0s;
+      }
+
+      .scribble:nth-child(2) {
+        animation-delay: 2s;
+      }
+
+      .scribble:nth-child(3) {
+        animation-delay: 4s;
+      }
+
+      .scribble:nth-child(4) {
+        animation-delay: 6s;
+      }
+
+      .scribble:nth-child(5) {
+        animation-delay: 8s;
       }
     `;
     document.head.appendChild(style);
