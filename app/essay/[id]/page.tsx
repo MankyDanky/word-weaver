@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -28,6 +28,8 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
   const [editedContent, setEditedContent] = useState('');
   const [wordCount, setWordCount] = useState(0);
   const [activeEditorTab, setActiveEditorTab] = useState<'edit' | 'preview' | 'citations'>('edit');
+  const [isAppendingWorksCited, setIsAppendingWorksCited] = useState(false);
+  const previewBottomRef = useRef<HTMLDivElement | null>(null);
   
   // Fetch essay data
   useEffect(() => {
@@ -159,7 +161,7 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
 
     // Handle paragraphs (simple approach)
     formattedContent = formattedContent
-      .split('\n\n')
+      .split('\n')
       .map((para) => {
         // Skip if it's already a header or empty
         if (para.trim().startsWith('<h') || !para.trim()) return para;
@@ -198,6 +200,49 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
       textarea.setSelectionRange(cursorPosition, cursorPosition);
       textarea.focus();
     }, 0);
+  };
+
+  const handleAppendWorksCited = async () => {
+    if (!essay?.citations || essay.citations.length === 0) {
+      setError('No citations available to generate works cited.');
+      return;
+    }
+
+    setIsAppendingWorksCited(true); // Set loading state to true
+
+    try {
+      const response = await fetch('/api/citations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ citations: essay.citations }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate works cited');
+      }
+
+      const data = await response.json();
+
+      if (data.worksCited) {
+        // Append the works cited to the essay content
+        const updatedContent = `${editedContent}\n\n${data.worksCited}`;
+        setEditedContent(updatedContent);
+        calculateWordCount(updatedContent);
+
+        // Switch to the preview tab
+        setActiveEditorTab('preview');
+
+        // Scroll to the bottom of the preview page
+        setTimeout(() => {
+          previewBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 5);
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Error appending works cited.');
+    } finally {
+      setIsAppendingWorksCited(false); // Set loading state to false
+    }
   };
 
   if (authLoading || isLoading) {
@@ -431,6 +476,8 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
                         className="prose prose-lg max-w-none"
                         dangerouslySetInnerHTML={{ __html: formatMarkdown(editedContent) }}
                       ></div>
+                      {/* Reference for scrolling to the bottom */}
+                      <div ref={previewBottomRef}></div>
                     </div>
                   )}
 
@@ -439,20 +486,58 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
                     <div className="p-6">
                       <h2 className="text-lg font-semibold text-gray-800 mb-4">Citations</h2>
                       {essay?.citations?.length > 0 ? (
-                        <ul className="list-disc pl-5 space-y-2">
-                          {essay.citations.map((citation, index) => (
-                            <li key={index} className="text-gray-600">
-                              <a
-                                href={citation}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-indigo-600 hover:text-indigo-800 hover:underline break-words"
-                              >
-                                {citation}
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
+                        <>
+                          <ul className="list-disc pl-5 space-y-2">
+                            {essay.citations.map((citation, index) => (
+                              <li key={index} className="text-gray-600">
+                                <a
+                                  href={citation}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-indigo-600 hover:text-indigo-800 hover:underline break-words"
+                                >
+                                  {citation}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                          {/* Append Works Cited Button */}
+                          <button
+                            onClick={handleAppendWorksCited}
+                            disabled={isAppendingWorksCited}
+                            className={`mt-6 inline-flex items-center bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white py-2 px-5 rounded-lg font-medium shadow-md transition-all text-sm ${
+                              isAppendingWorksCited ? 'opacity-50 cursor-not-allowed' : ''
+                            }`}
+                          >
+                            {isAppendingWorksCited ? (
+                              <div className="flex items-center">
+                                <svg
+                                  className="animate-spin h-4 w-4 mr-2 text-white"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                  ></circle>
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8v8H4z"
+                                  ></path>
+                                </svg>
+                                Appending...
+                              </div>
+                            ) : (
+                              'Append Works Cited'
+                            )}
+                          </button>
+                        </>
                       ) : (
                         <p className="text-gray-500 italic">No citations available for this essay.</p>
                       )}

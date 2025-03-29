@@ -55,6 +55,13 @@ export async function POST(request: NextRequest) {
 // Function to generate works cited using Perplexity SONAR model
 async function generateWorksCited(citations: string[]) {
   try {
+    // Get the current date in a readable format (e.g., "March 29, 2025")
+    const currentDate = new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
     // Create a detailed prompt for generating works cited
     const promptContent = `
     Generate a properly formatted works cited section for the following citations in MLA format:
@@ -62,8 +69,12 @@ async function generateWorksCited(citations: string[]) {
 
     Requirements:
     - Each citation must be formatted in MLA style
+    - Include the header "Works Cited" at the top in bold
+    - Each line should begin with numbers in the order provided, the order is VERY IMPORTANT
+    - Include the "date of access" field as "${currentDate}" for each citation
     - Include all provided citations in the works cited section
     - Do NOT include any placeholder text or meta commentary
+    - If any information can't be found, do NOT include that field. DO NOT CREATE ANY PLACEHOLDER TEXT
     - Return only the formatted works cited section
     `;
 
