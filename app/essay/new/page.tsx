@@ -37,25 +37,11 @@ export default function NewEssay() {
   }, [authLoading, isAuthenticated, router]);
 
   useEffect(() => {
-    // Updated animation styles for black pen
     const style = document.createElement('style');
     style.innerHTML = `
       @keyframes write {
         0% { stroke-dashoffset: 240; }
         100% { stroke-dashoffset: 0; }
-      }
-
-      @keyframes move {
-        0%, 100% { transform: translate(0, 0) rotate(3deg); }
-        25% { transform: translate(-2px, -1px) rotate(2deg); }
-        50% { transform: translate(-4px, -2px) rotate(1deg); }
-        75% { transform: translate(-2px, -1px) rotate(2deg); }
-      }
-
-      .pen {
-        animation: move 1s ease-in-out infinite;
-        transform-origin: 110px 85px;
-        transform-box: fill-box;
       }
 
       .scribble {
@@ -370,49 +356,62 @@ export default function NewEssay() {
           </div>
         )}
         
-        {/* Loading view with pen animation */}
+        {/* Loading view with scribble animation */}
         {viewMode === 'loading' && (
           <div className="bg-white rounded-xl shadow-sm p-12 border border-gray-200 max-w-3xl mx-auto">
             <div className="flex flex-col items-center justify-center">
-              {/* Pen writing animation */}
+              {/* Scribble animation */}
               <div className="mb-8 w-48 h-48 relative">
-                <svg className="pen-animation" width="100%" height="100%" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <svg className="scribble-animation" width="100%" height="100%" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
                   {/* Paper */}
                   <rect x="40" y="40" width="120" height="140" fill="#f8f8f8" stroke="#e0e0e0" strokeWidth="1" />
                   
-                  {/* Paper lines */}
-                  <line x1="50" y1="60" x2="150" y2="60" stroke="#e0e0e0" strokeWidth="1" />
-                  <line x1="50" y1="80" x2="150" y2="80" stroke="#e0e0e0" strokeWidth="1" />
-                  <line x1="50" y1="100" x2="150" y2="100" stroke="#e0e0e0" strokeWidth="1" />
-                  <line x1="50" y1="120" x2="150" y2="120" stroke="#e0e0e0" strokeWidth="1" />
-                  <line x1="50" y1="140" x2="150" y2="140" stroke="#e0e0e0" strokeWidth="1" />
-                  <line x1="50" y1="160" x2="150" y2="160" stroke="#e0e0e0" strokeWidth="1" />
-                  
-                  {/* Scribble path that will be drawn - NOW BEFORE the pen */}
+                  {/* Scribbles */}
                   <path 
                     className="scribble" 
-                    d="M60,70 Q70,65 80,70 T100,70 T120,70 T140,70 M60,90 Q70,85 80,90 T100,90 T120,90 T140,90 M60,110 Q70,105 80,110 T100,110 T120,110 T140,110" 
+                    d="M60,70 Q70,65 80,70 T100,70 T120,70 T140,70" 
                     fill="none" 
                     stroke="#3949AB" 
                     strokeWidth="2"
                     strokeDasharray="240"
                     strokeDashoffset="240"
                   />
-                  
-                  {/* Simple black pen - AFTER the scribble so it appears on top */}
-                  <g className="pen">
-                    {/* Pen body */}
-                    <path d="M85,45 L155,115 L145,125 L75,55 Z" fill="#111111" />
-                    
-                    {/* Pen tip */}
-                    <path d="M75,55 L65,65 L70,70 L80,60 Z" fill="#000000" />
-                    
-                    {/* Pen cap highlight */}
-                    <path d="M145,125 L155,115 L160,120 L150,130 Z" fill="#333333" />
-                    
-                    {/* Pen clip */}
-                    <path d="M130,90 L135,95 L125,115 L120,110 Z" fill="#444444" />
-                  </g>
+                  <path 
+                    className="scribble" 
+                    d="M60,90 Q70,85 80,90 T100,90 T120,90 T140,90" 
+                    fill="none" 
+                    stroke="#3949AB" 
+                    strokeWidth="2"
+                    strokeDasharray="240"
+                    strokeDashoffset="240"
+                  />
+                  <path 
+                    className="scribble" 
+                    d="M60,110 Q70,105 80,110 T100,110 T120,110 T140,110" 
+                    fill="none" 
+                    stroke="#3949AB" 
+                    strokeWidth="2"
+                    strokeDasharray="240"
+                    strokeDashoffset="240"
+                  />
+                  <path 
+                    className="scribble" 
+                    d="M60,130 Q70,125 80,130 T100,130 T120,130 T140,130" 
+                    fill="none" 
+                    stroke="#3949AB" 
+                    strokeWidth="2"
+                    strokeDasharray="240"
+                    strokeDashoffset="240"
+                  />
+                  <path 
+                    className="scribble" 
+                    d="M60,150 Q70,145 80,150 T100,150 T120,150 T140,150" 
+                    fill="none" 
+                    stroke="#3949AB" 
+                    strokeWidth="2"
+                    strokeDasharray="240"
+                    strokeDashoffset="240"
+                  />
                 </svg>
               </div>
               
