@@ -21,7 +21,7 @@ export default function Home() {
               </p>
               <div className="mt-10 flex flex-col sm:flex-row gap-4">
                 <Link
-                  href={isAuthenticated ? "/dashboard" : "/login"}
+                  href={isAuthenticated ? "/dashboard" : "/register"}
                   className="bg-white text-indigo-600 px-8 py-3 rounded-lg font-medium shadow-md hover:bg-blue-50 transition-colors"
                 >
                   {isAuthenticated ? "Go to Dashboard" : "Get Started"}
