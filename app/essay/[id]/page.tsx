@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/hooks/useAuth';
+import html2pdf from 'html2pdf.js';
 
 // Essay type definition from your existing code
 interface Essay {
@@ -340,6 +341,34 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
     URL.revokeObjectURL(url);
   };
 
+  const handleDownloadPDF = () => {
+    if (!essay) return;
+    
+    // Convert markdown to HTML first
+    const htmlContent = formatMarkdown(editedContent);
+    
+    // Create a temporary div to render the HTML
+    const element = document.createElement('div');
+    element.className = 'prose prose-lg max-w-none p-8';
+    element.innerHTML = htmlContent;
+    document.body.appendChild(element);
+    
+    // Configure PDF options
+    const options = {
+      margin: [10, 10],
+      filename: `${essay.topic.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    
+    // Generate PDF
+    html2pdf().from(element).set(options).save().then(() => {
+      // Remove the temporary element
+      document.body.removeChild(element);
+    });
+  };
+
   const handleRequestReview = async () => {
     if (!essay) return;
     
@@ -619,16 +648,26 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
                     </div>
 
                     <div className="pt-4 border-t border-gray-100 mt-4">
-                      <button
-                        onClick={handleDownloadMarkdown}
-                        className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-gradient-to-r from-blue-400 to-indigo-600 hover:from-blue-500 hover:to-indigo-700 text-white rounded-md text-sm font-medium shadow-md transition-all"
-                        title="Download as Markdown"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                        Download
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleDownloadMarkdown}
+                          className="flex-1 flex items-center justify-center gap-2 py-2 px-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-sm font-medium transition-all"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2" />
+                          </svg>
+                          .md
+                        </button>
+                        <button
+                          onClick={handleDownloadPDF}
+                          className="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-gradient-to-r from-blue-400 to-indigo-600 hover:from-blue-500 hover:to-indigo-700 text-white rounded-md text-sm font-medium shadow-md transition-all"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                          PDF
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}

@@ -487,7 +487,7 @@ export default function NewEssay() {
               <h3 className="text-xl font-semibold text-gray-800 mb-4">Generating Your Essay</h3>
               <p className="text-gray-600 text-center mb-2">This may take a minute or two...</p>
               <p className="text-gray-500 text-sm text-center max-w-sm">
-                Our AI is crafting a thoughtful essay on "{topic}"{thesis ? ` with your thesis: "${thesis}"` : ""}.
+                Our AI is crafting a thoughtful essay on &#34;{topic}&#34;{thesis ? ` with your thesis: "${thesis}"` : ""}.
               </p>
             </div>
           </div>

@@ -1,6 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import { useAuth } from "@/lib/hooks/useAuth";
 
 export default function Home() {
+  const { isAuthenticated } = useAuth();
+
   return (
     <div className="min-h-screen font-poppins">
       {/* Hero Section */}
@@ -15,10 +20,16 @@ export default function Home() {
                 WordWeaverAI helps you create well-structured, thoughtful essays on any topic in minutes, not hours.
               </p>
               <div className="mt-10 flex flex-col sm:flex-row gap-4">
-                <Link href="/login" className="bg-white text-indigo-600 px-8 py-3 rounded-lg font-medium shadow-md hover:bg-blue-50 transition-colors">
-                  Get Started
+                <Link
+                  href={isAuthenticated ? "/dashboard" : "/login"}
+                  className="bg-white text-indigo-600 px-8 py-3 rounded-lg font-medium shadow-md hover:bg-blue-50 transition-colors"
+                >
+                  {isAuthenticated ? "Go to Dashboard" : "Get Started"}
                 </Link>
-                <Link href="#how-it-works" className="border border-white px-8 py-3 rounded-lg font-medium hover:bg-white hover:text-indigo-600 transition-colors">
+                <Link
+                  href="#how-it-works"
+                  className="border border-white px-8 py-3 rounded-lg font-medium hover:bg-white hover:text-indigo-600 transition-colors"
+                >
                   Learn More
                 </Link>
               </div>

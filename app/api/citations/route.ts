@@ -82,6 +82,7 @@ async function generateWorksCited(citations: string[], style: string) {
     - Include all provided citations in the works cited section
     - Do NOT include any placeholder text or meta commentary
     - If any information can't be found, do NOT include that field. DO NOT CREATE ANY PLACEHOLDER TEXT
+    - If the author, title, or publisher can't be found, do NOT include that field
     - Return only the formatted works cited section
     `;
 
