@@ -74,6 +74,17 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
     calculateWordCount(newContent);
   };
 
+  // Handle key down events
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+      e.preventDefault();
+      addFormatting('bold');
+    } else if ((e.metaKey || e.ctrlKey) && e.key === 'i') {
+      e.preventDefault();
+      addFormatting('italic');
+    }
+  };
+
   // Format date helper
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
@@ -131,28 +142,31 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
   // Format Markdown to HTML
   const formatMarkdown = (content: string) => {
     if (!content) return '';
-    
+
     let formattedContent = content;
-    
+
     // Handle headers
     formattedContent = formattedContent.replace(/^(#{1,6})\s+(.+)$/gm, (match, hashes, text) => {
       const level = hashes.length;
       return `<h${level} class="text-${level === 1 ? '3xl' : level === 2 ? '2xl' : level === 3 ? 'xl' : 'lg'} font-bold my-4">${text}</h${level}>`;
     });
-    
+
     // Handle bold text with ** or __
     formattedContent = formattedContent.replace(/(\*\*|__)(.*?)\1/g, '<strong>$2</strong>');
-    
+
     // Handle italic text with * or _
     formattedContent = formattedContent.replace(/(\*|_)(.*?)\1/g, '<em>$2</em>');
-    
+
     // Handle paragraphs (simple approach)
-    formattedContent = formattedContent.split('\n\n').map(para => {
-      // Skip if it's already a header or empty
-      if (para.trim().startsWith('<h') || !para.trim()) return para;
-      return `<p class="mb-4">${para}</p>`;
-    }).join('');
-    
+    formattedContent = formattedContent
+      .split('\n\n')
+      .map((para) => {
+        // Skip if it's already a header or empty
+        if (para.trim().startsWith('<h') || !para.trim()) return para;
+        return `<p class="mb-4">${para}</p>`;
+      })
+      .join('');
+
     return formattedContent;
   };
 
@@ -160,32 +174,30 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
   const addFormatting = (format: string) => {
     const textarea = document.getElementById('essay-editor') as HTMLTextAreaElement;
     if (!textarea) return;
-    
+
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selectedText = editedContent.substring(start, end);
     let formattedText = '';
-    
-    switch(format) {
+
+    switch (format) {
       case 'bold':
-        formattedText = `**${selectedText}**`;
+        formattedText = `**${selectedText || ''}**`;
         break;
       case 'italic':
-        formattedText = `*${selectedText}*`;
-        break;
-      case 'h1':
-        formattedText = `# ${selectedText}`;
-        break;
-      case 'h2':
-        formattedText = `## ${selectedText}`;
-        break;
-      case 'h3':
-        formattedText = `### ${selectedText}`;
+        formattedText = `*${selectedText || ''}*`;
         break;
     }
-    
+
     const newContent = editedContent.substring(0, start) + formattedText + editedContent.substring(end);
     setEditedContent(newContent);
+
+    // Set the cursor position inside the formatting
+    const cursorPosition = start + (format === 'bold' ? 2 : 1); // Place cursor after the opening `**` or `*`
+    setTimeout(() => {
+      textarea.setSelectionRange(cursorPosition, cursorPosition);
+      textarea.focus();
+    }, 0);
   };
 
   if (authLoading || isLoading) {
@@ -367,31 +379,31 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 {/* Editor tabs */}
                 <div className="border-b border-gray-200 flex">
-                  <button 
+                  <button
                     onClick={() => setActiveEditorTab('edit')}
                     className={`py-3 px-6 text-sm font-medium ${
-                      activeEditorTab === 'edit' 
-                        ? 'border-b-2 border-indigo-500 text-indigo-600' 
+                      activeEditorTab === 'edit'
+                        ? 'border-b-2 border-indigo-500 text-indigo-600'
                         : 'text-gray-500 hover:text-gray-700'
                     }`}
                   >
                     Edit
                   </button>
-                  <button 
+                  <button
                     onClick={() => setActiveEditorTab('preview')}
                     className={`py-3 px-6 text-sm font-medium ${
-                      activeEditorTab === 'preview' 
-                        ? 'border-b-2 border-indigo-500 text-indigo-600' 
+                      activeEditorTab === 'preview'
+                        ? 'border-b-2 border-indigo-500 text-indigo-600'
                         : 'text-gray-500 hover:text-gray-700'
                     }`}
                   >
                     Preview
                   </button>
-                  <button 
+                  <button
                     onClick={() => setActiveEditorTab('citations')}
                     className={`py-3 px-6 text-sm font-medium ${
-                      activeEditorTab === 'citations' 
-                        ? 'border-b-2 border-indigo-500 text-indigo-600' 
+                      activeEditorTab === 'citations'
+                        ? 'border-b-2 border-indigo-500 text-indigo-600'
                         : 'text-gray-500 hover:text-gray-700'
                     }`}
                   >
@@ -399,67 +411,50 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
                   </button>
                 </div>
                 
-                {/* Content area - editor, preview, or citations */}
+                {/* Content area - editor */}
                 <div className="p-6">
-                  {activeEditorTab === 'edit' ? (
+                  {activeEditorTab === 'edit' && (
                     <textarea
                       id="essay-editor"
                       value={editedContent}
                       onChange={handleContentChange}
+                      onKeyDown={handleKeyDown}
                       className="w-full h-[calc(100vh-16rem)] rounded-md border border-gray-300 p-4 text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                       placeholder="Start writing your essay here..."
                     ></textarea>
-                  ) : activeEditorTab === 'preview' ? (
-                    <div 
-                      className="w-full h-[calc(100vh-16rem)] overflow-y-auto p-4 prose prose-lg max-w-none"
-                      dangerouslySetInnerHTML={{ __html: formatMarkdown(editedContent) }}
-                    ></div>
-                  ) : (
-                    <div className="w-full h-[calc(100vh-16rem)] overflow-y-auto p-4">
-                      <h2 className="text-xl font-bold text-gray-800 mb-4">Citations</h2>
+                  )}
+
+                  {/* Preview tab content */}
+                  {activeEditorTab === 'preview' && (
+                    <div className="p-6">
+                      <div
+                        className="prose prose-lg max-w-none"
+                        dangerouslySetInnerHTML={{ __html: formatMarkdown(editedContent) }}
+                      ></div>
+                    </div>
+                  )}
+
+                  {/* Citations tab content */}
+                  {activeEditorTab === 'citations' && (
+                    <div className="p-6">
+                      <h2 className="text-lg font-semibold text-gray-800 mb-4">Citations</h2>
                       {essay?.citations?.length > 0 ? (
-                        <div className="space-y-4">
-                          <p className="text-sm text-gray-500 mb-4">
-                            These sources were used in the generation of your essay.
-                          </p>
-                          <ol className="list-decimal pl-6 space-y-3">
-                            {essay.citations.map((citation, index) => (
-                              <li key={index} className="text-gray-800">
-                                <div className="flex items-start">
-                                  <div className="flex-1">
-                                    <a 
-                                      href={citation} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                      className="text-blue-600 hover:text-blue-800 hover:underline break-words"
-                                    >
-                                      {citation}
-                                    </a>
-                                  </div>
-                                  <button 
-                                    className="ml-2 p-1 text-gray-400 hover:text-gray-600"
-                                    title="Copy citation"
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(citation);
-                                      // Could add toast notification here
-                                    }}
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                    </svg>
-                                  </button>
-                                </div>
-                              </li>
-                            ))}
-                          </ol>
-                        </div>
+                        <ul className="list-disc pl-5 space-y-2">
+                          {essay.citations.map((citation, index) => (
+                            <li key={index} className="text-gray-600">
+                              <a
+                                href={citation}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-indigo-600 hover:text-indigo-800 hover:underline break-words"
+                              >
+                                {citation}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
                       ) : (
-                        <div className="text-center py-12">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                          </svg>
-                          <p className="mt-4 text-gray-500">No citations available for this essay.</p>
-                        </div>
+                        <p className="text-gray-500 italic">No citations available for this essay.</p>
                       )}
                     </div>
                   )}
