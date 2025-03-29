@@ -79,7 +79,7 @@ async function getEssayReview(content: string, title: string) {
     IMPORTANT INSTRUCTIONS:
     1. Your response MUST be valid JSON that can be parsed directly.
     2. Each rating should be an integer between 1-10, where 10 is excellent.
-    3. Provide 3-5 specific, actionable suggestions for improvement.
+    3. Provide 1-3 specific, actionable suggestions for improvement. Keep these suggestions short and to the point while maintaining clarity and information.
     4. Do NOT include ANY explanatory text outside the JSON structure.
     5. Do NOT use markdown, code blocks, or other formatting.
     6. Simply return the raw JSON object.
