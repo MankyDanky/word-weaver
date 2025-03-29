@@ -4,7 +4,17 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/hooks/useAuth';
-import html2pdf from 'html2pdf.js';
+
+// Add this at the top of your file
+declare global {
+  interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    html2pdf: any;
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+declare const html2pdf: any; 
 
 // Essay type definition from your existing code
 interface Essay {
@@ -341,32 +351,65 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
     URL.revokeObjectURL(url);
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     if (!essay) return;
     
-    // Convert markdown to HTML first
-    const htmlContent = formatMarkdown(editedContent);
-    
-    // Create a temporary div to render the HTML
-    const element = document.createElement('div');
-    element.className = 'prose prose-lg max-w-none p-8';
-    element.innerHTML = htmlContent;
-    document.body.appendChild(element);
-    
-    // Configure PDF options
-    const options = {
-      margin: [10, 10],
-      filename: `${essay.topic.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-    
-    // Generate PDF
-    html2pdf().from(element).set(options).save().then(() => {
-      // Remove the temporary element
-      document.body.removeChild(element);
-    });
+    try {
+      // Create a styled container for the content
+      const container = document.createElement('div');
+      container.className = 'pdf-container';
+      container.style.padding = '20px';
+      container.style.maxWidth = '800px';
+      container.style.margin = '0 auto';
+      container.style.fontFamily = 'Arial, sans-serif';
+      
+      // Add essay title
+      const titleElement = document.createElement('h1');
+      titleElement.textContent = essay.topic;
+      titleElement.style.marginBottom = '20px';
+      container.appendChild(titleElement);
+      
+      // Add essay content (convert markdown to HTML)
+      const contentDiv = document.createElement('div');
+      contentDiv.innerHTML = formatMarkdown(editedContent);
+      container.appendChild(contentDiv);
+      
+      // Add to document temporarily
+      document.body.appendChild(container);
+      
+      // Load html2pdf from CDN if not already loaded
+      if (!window.html2pdf) {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+        script.async = true;
+        
+        // Wait for the script to load
+        await new Promise((resolve, reject) => {
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+      }
+      
+      // Configure PDF options
+      const options = {
+        margin: 15,
+        filename: `${essay.topic.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      
+      // Generate PDF using the global html2pdf
+      window.html2pdf().from(container).set(options).save().then(() => {
+        // Remove the temporary container
+        document.body.removeChild(container);
+      });
+        
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      setError(`Failed to generate PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   const handleRequestReview = async () => {
@@ -966,8 +1009,7 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
                                     cy="12"
                                     r="10"
                                     stroke="currentColor"
-                                    strokeWidth="4"
-                                  ></circle>
+                                    strokeWidth="4"></circle>
                                   <path
                                     className="opacity-75"
                                     fill="currentColor"

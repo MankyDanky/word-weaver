@@ -5,13 +5,12 @@ import { getUserIdFromToken } from '@/lib/services/auth';
 import mongoose from 'mongoose';
 
 // GET specific essay by ID
-export async function GET(request: NextRequest, context: { params: { id: string } }) {
+export async function GET(request: NextRequest, {params}: {params: Promise<{id: string}>}) {
   try {
     // Connect to the database
     await dbConnect();
     
-    // Access id from context.params instead of destructuring in the function signature
-    const id = context.params.id;
+    const {id} = await params;
     
     // Validate ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -56,13 +55,16 @@ export async function GET(request: NextRequest, context: { params: { id: string 
 }
 
 // DELETE essay by ID
-export async function DELETE(request: NextRequest, context: { params: { id: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  {params}: {params: Promise<{id: string}>}
+) {
   try {
     // Connect to the database
     await dbConnect();
     
-    // Access id from context.params
-    const id = context.params.id;
+    // Access id from params
+    const {id} = await params;
     
     // Validate ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -109,13 +111,16 @@ export async function DELETE(request: NextRequest, context: { params: { id: stri
 }
 
 // Update essay by ID
-export async function PUT(request: NextRequest, context: { params: { id: string } }) {
+export async function PUT(
+  request: NextRequest,
+  {params}: {params: Promise<{id: string}>}
+) {
   try {
     // Connect to the database
     await dbConnect();
     
-    // Access id from context.params
-    const id = context.params.id;
+    // Access id from params
+    const {id} = await params;
     
     // Validate ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
