@@ -31,7 +31,7 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
   const [isAppendingWorksCited, setIsAppendingWorksCited] = useState(false);
   const [citationStyle, setCitationStyle] = useState('MLA'); // Default to MLA
   const previewBottomRef = useRef<HTMLDivElement | null>(null);
-  
+
   // Fetch essay data
   useEffect(() => {
     async function fetchEssay() {
@@ -102,7 +102,7 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
   // Save essay
   const handleSave = async (newStatus?: Essay['status']) => {
     if (!essay) return;
-    
+
     setIsSaving(true);
     try {
       const response = await fetch(`/api/essay/${params.id}`, {
@@ -114,11 +114,11 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
           status: newStatus || essay.status
         })
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to save essay');
       }
-      
+
       const data = await response.json();
       setEssay(data.essay);
       // Show success message or notification here
@@ -130,14 +130,13 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
     }
   };
 
-
   // Handle status change
   const handleStatusChange = (newStatus: Essay['status']) => {
     if (newStatus === essay?.status || isSaving) return;
-    
+
     // Show visual feedback immediately
-    setEssay(prev => prev ? {...prev, status: newStatus} : null);
-    
+    setEssay(prev => prev ? { ...prev, status: newStatus } : null);
+
     // Save the change to the server
     handleSave(newStatus);
   };
@@ -182,25 +181,68 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
     const end = textarea.selectionEnd;
     const selectedText = editedContent.substring(start, end);
     let formattedText = '';
+    let newContent = '';
 
     switch (format) {
       case 'bold':
         formattedText = `**${selectedText || ''}**`;
+        newContent = editedContent.substring(0, start) + formattedText + editedContent.substring(end);
+
+        // Set the cursor position inside the formatting
+        const boldCursorPosition = start + 2; // Place cursor after the opening `**`
+        setTimeout(() => {
+          textarea.setSelectionRange(boldCursorPosition, boldCursorPosition);
+          textarea.focus();
+        }, 0);
         break;
+
       case 'italic':
         formattedText = `*${selectedText || ''}*`;
+        newContent = editedContent.substring(0, start) + formattedText + editedContent.substring(end);
+
+        // Set the cursor position inside the formatting
+        const italicCursorPosition = start + 1; // Place cursor after the opening `*`
+        setTimeout(() => {
+          textarea.setSelectionRange(italicCursorPosition, italicCursorPosition);
+          textarea.focus();
+        }, 0);
+        break;
+
+      case 'h1':
+      case 'h2':
+      case 'h3':
+        // Get the full content and determine the line the cursor is on
+        let lineStart = editedContent.lastIndexOf('\n', start - 1) + 1;
+        if (lineStart < 0) lineStart = 0;
+
+        const lineEnd = editedContent.indexOf('\n', start);
+        const endPos = lineEnd === -1 ? editedContent.length : lineEnd;
+        const currentLine = editedContent.substring(lineStart, endPos);
+
+        // Remove any existing heading markers
+        const cleanedLine = currentLine.replace(/^#{1,6}\s*/, '');
+
+        // Add the appropriate number of hashtags
+        const hashCount = format === 'h1' ? 1 : format === 'h2' ? 2 : 3;
+        const hashes = '#'.repeat(hashCount);
+        formattedText = `${hashes} ${cleanedLine}`;
+
+        // Create new content with the formatted line
+        newContent =
+          editedContent.substring(0, lineStart) +
+          formattedText +
+          editedContent.substring(endPos);
+
+        // Position cursor at the end of the heading
+        const headingCursorPosition = lineStart + formattedText.length;
+        setTimeout(() => {
+          textarea.setSelectionRange(headingCursorPosition, headingCursorPosition);
+          textarea.focus();
+        }, 0);
         break;
     }
 
-    const newContent = editedContent.substring(0, start) + formattedText + editedContent.substring(end);
     setEditedContent(newContent);
-
-    // Set the cursor position inside the formatting
-    const cursorPosition = start + (format === 'bold' ? 2 : 1); // Place cursor after the opening `**` or `*`
-    setTimeout(() => {
-      textarea.setSelectionRange(cursorPosition, cursorPosition);
-      textarea.focus();
-    }, 0);
   };
 
   const handleAppendWorksCited = async () => {
@@ -244,6 +286,37 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
     } finally {
       setIsAppendingWorksCited(false); // Set loading state to false
     }
+  };
+
+  const handleDownloadMarkdown = () => {
+    if (!essay) return;
+    
+    // Create file content
+    const content = editedContent;
+    
+    // Create file name (sanitize the topic for the filename)
+    const fileName = `${essay.topic.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`;
+    
+    // Create a blob with the content
+    const blob = new Blob([content], { type: 'text/markdown' });
+    
+    // Create a URL for the blob
+    const url = URL.createObjectURL(blob);
+    
+    // Create a link element
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    
+    // Append to the document
+    document.body.appendChild(link);
+    
+    // Trigger the download
+    link.click();
+    
+    // Clean up
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   if (authLoading || isLoading) {
@@ -297,30 +370,30 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
             <div className="lg:w-64 shrink-0">
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sticky top-8">
                 <h2 className="font-semibold text-lg text-gray-800 mb-4">Essay Details</h2>
-                
+
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-sm font-medium text-gray-500">Topic</h3>
                     <p className="text-gray-800">{essay.topic}</p>
                   </div>
-                  
+
                   {essay.thesis && (
                     <div>
                       <h3 className="text-sm font-medium text-gray-500">Thesis</h3>
                       <p className="text-gray-800">{essay.thesis}</p>
                     </div>
                   )}
-                  
+
                   <div>
                     <h3 className="text-sm font-medium text-gray-500">Created</h3>
                     <p className="text-gray-800">{formatDate(essay.created_at)}</p>
                   </div>
-                  
+
                   <div>
                     <h3 className="text-sm font-medium text-gray-500">Words</h3>
                     <p className="text-gray-800">{wordCount} words</p>
                   </div>
-                  
+
                   <div>
                     <div className="flex items-center justify-between">
                       <h3 className="text-sm font-medium text-gray-500">Status</h3>
@@ -342,7 +415,7 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
                       >
                         Draft
                       </button>
-                      
+
                       <button
                         onClick={() => handleStatusChange('in-progress')}
                         className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
@@ -353,7 +426,7 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
                       >
                         In Progress
                       </button>
-                      
+
                       <button
                         onClick={() => handleStatusChange('complete')}
                         className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
@@ -366,7 +439,7 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
                       </button>
                     </div>
                   </div>
-                  
+
                   <div className="pt-4">
                     <h3 className="text-sm font-medium text-gray-500 mb-2">Formatting</h3>
                     <div className="flex flex-wrap gap-2">
@@ -416,10 +489,23 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
                       </button>
                     </div>
                   </div>
+
+                  <div className="pt-4 border-t border-gray-100 mt-4">
+                    <button
+                      onClick={handleDownloadMarkdown}
+                      className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-gradient-to-r from-blue-400 to-indigo-600 hover:from-blue-500 hover:to-indigo-700 text-white rounded-md text-sm font-medium shadow-md transition-all"
+                      title="Download as Markdown"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Download
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-            
+
             {/* Editor area */}
             <div className="flex-1">
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -456,7 +542,7 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
                     Citations {essay?.citations?.length > 0 && `(${essay.citations.length})`}
                   </button>
                 </div>
-                
+
                 {/* Content area - editor */}
                 <div className="p-6">
                   {activeEditorTab === 'edit' && (
@@ -563,7 +649,7 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
                     </div>
                   )}
                 </div>
-                
+
                 {/* Word count footer */}
                 <div className="p-3 border-t border-gray-200 bg-gray-50 flex justify-between items-center text-sm text-gray-500">
                   <div>{wordCount} words</div>
