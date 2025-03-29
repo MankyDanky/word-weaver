@@ -39,36 +39,70 @@ export default function NewEssay() {
   useEffect(() => {
     const style = document.createElement('style');
     style.innerHTML = `
-      @keyframes write {
+      @keyframes write-1 {
         0% { stroke-dashoffset: 240; }
+        16.66% { stroke-dashoffset: 0; }
         100% { stroke-dashoffset: 0; }
       }
 
-      .scribble {
+      .scribble-1 {
         stroke-dasharray: 240;
         stroke-dashoffset: 240;
-        animation: write 2s linear forwards;
+        animation: write-1 12s linear infinite;
       }
 
-      .scribble:nth-child(1) {
-        animation-delay: 0s;
+      @keyframes write-2 {
+        0% { stroke-dashoffset: 240; }
+        16.66% { stroke-dashoffset: 240; }
+        33.33% { stroke-dashoffset: 0; }
+        100% { stroke-dashoffset: 0; }
+      }
+      
+      .scribble-2 {
+        stroke-dasharray: 240;
+        stroke-dashoffset: 240;
+        animation: write-2 12s linear infinite;
       }
 
-      .scribble:nth-child(2) {
-        animation-delay: 2s;
+      @keyframes write-3 {
+        0% { stroke-dashoffset: 240; }
+        33.33% { stroke-dashoffset: 240; }
+        50% { stroke-dashoffset: 0; }
+        100% { stroke-dashoffset: 0; }
       }
 
-      .scribble:nth-child(3) {
-        animation-delay: 4s;
+      .scribble-3 {
+        stroke-dasharray: 240;
+        stroke-dashoffset: 240;
+        animation: write-3 12s linear infinite;
       }
 
-      .scribble:nth-child(4) {
-        animation-delay: 6s;
+      @keyframes write-4 {
+        0% { stroke-dashoffset: 240; }
+        50% { stroke-dashoffset: 240; }
+        66.66% { stroke-dashoffset: 0; }
+        100% { stroke-dashoffset: 0; }
       }
 
-      .scribble:nth-child(5) {
-        animation-delay: 8s;
+      .scribble-4 {
+        stroke-dasharray: 240;
+        stroke-dashoffset: 240;
+        animation: write-4 12s linear infinite;
       }
+
+      @keyframes write-5 {
+        0% { stroke-dashoffset: 240; }
+        66.66% { stroke-dashoffset: 240; } 
+        83.33% { stroke-dashoffset: 0; }
+        100% { stroke-dashoffset: 0; }
+      }
+
+      .scribble-5 {
+        stroke-dasharray: 240;
+        stroke-dashoffset: 240;
+        animation: write-5 12s linear infinite;
+      }
+
     `;
     document.head.appendChild(style);
 
@@ -388,51 +422,41 @@ export default function NewEssay() {
                   {/* Paper */}
                   <rect x="40" y="40" width="120" height="140" fill="#f8f8f8" stroke="#e0e0e0" strokeWidth="1" />
                   
-                  {/* Scribbles */}
+                  {/* Scribbles - Ensure correct order */}
                   <path 
-                    className="scribble" 
+                    className="scribble scribble-1" 
                     d="M60,70 Q70,65 80,70 T100,70 T120,70 T140,70" 
                     fill="none" 
                     stroke="#3949AB" 
                     strokeWidth="2"
-                    strokeDasharray="240"
-                    strokeDashoffset="240"
                   />
                   <path 
-                    className="scribble" 
+                    className="scribble scribble-2" 
                     d="M60,90 Q70,85 80,90 T100,90 T120,90 T140,90" 
                     fill="none" 
                     stroke="#3949AB" 
                     strokeWidth="2"
-                    strokeDasharray="240"
-                    strokeDashoffset="240"
                   />
                   <path 
-                    className="scribble" 
+                    className="scribble scribble-3" 
                     d="M60,110 Q70,105 80,110 T100,110 T120,110 T140,110" 
                     fill="none" 
                     stroke="#3949AB" 
                     strokeWidth="2"
-                    strokeDasharray="240"
-                    strokeDashoffset="240"
                   />
                   <path 
-                    className="scribble" 
+                    className="scribble scribble-4" 
                     d="M60,130 Q70,125 80,130 T100,130 T120,130 T140,130" 
                     fill="none" 
                     stroke="#3949AB" 
                     strokeWidth="2"
-                    strokeDasharray="240"
-                    strokeDashoffset="240"
                   />
                   <path 
-                    className="scribble" 
+                    className="scribble scribble-5" 
                     d="M60,150 Q70,145 80,150 T100,150 T120,150 T140,150" 
                     fill="none" 
                     stroke="#3949AB" 
                     strokeWidth="2"
-                    strokeDasharray="240"
-                    strokeDashoffset="240"
                   />
                 </svg>
               </div>
