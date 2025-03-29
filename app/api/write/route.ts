@@ -58,12 +58,12 @@ export async function POST(request: NextRequest) {
     let currentWordCount = countWords(essayContent);
     let extensionAttempts = 0;
     const MAX_EXTENSION_ATTEMPTS = 3; // Prevent infinite loops
-    const WORD_COUNT_TOLERANCE = 200; // Allow essay to be within 200 words of target
-    
+    const WORD_COUNT_TOLERANCE = Math.ceil(wordCount * 0.1); // 10% of the target word count
+
     // Continue extending until we're within tolerance of target word count
     while (currentWordCount < wordCount - WORD_COUNT_TOLERANCE && extensionAttempts < MAX_EXTENSION_ATTEMPTS) {
       extensionAttempts++;
-      console.log(`Essay extension attempt ${extensionAttempts}: Current word count ${currentWordCount}, target ${wordCount}`);
+      console.log(`Essay extension attempt ${extensionAttempts}: Current word count ${currentWordCount}, target ${wordCount}, tolerance ${WORD_COUNT_TOLERANCE}`);
       
       const extensionResult = await extendEssay(
         essayContent, 
@@ -79,9 +79,9 @@ export async function POST(request: NextRequest) {
         
         // Add any new citations
         if (extensionResult.citations && extensionResult.citations.length > 0) {
-            const newCitations: string[] = extensionResult.citations.filter(
+          const newCitations: string[] = extensionResult.citations.filter(
             (citation: string) => !citations.includes(citation)
-            );
+          );
           citations = [...citations, ...newCitations];
         }
         
@@ -154,12 +154,15 @@ async function generateEssay(
     
     Requirements (strictly follow these):
     - The essay MUST be ${wordCount} words in length
+    - Have clear headings and subheadings
     - Have a clear introduction with a thesis statement
     - Include well-developed body paragraphs with supporting evidence and examples
     - End with a conclusion that synthesizes the main points
     - Include citations for factual claims or quotes
     - Be written in ${style} style
     - Include sufficient detail to fulfill the word count requirement
+    - Do NOT include placeholder text or meta commentary about the essay
+    - Do NOT include a works cited section or a word count at the end
     
     Write a complete essay that is EXACTLY ${wordCount} words. Word count is critical.`;
     
@@ -226,15 +229,15 @@ async function extendEssay(
     1. Expand existing points with more evidence, examples, or deeper analysis
     2. Add relevant new supporting points that strengthen the overall argument
     3. Flow naturally with the existing text and maintain the ${style} style
-    4. Keep the original structure intact
+    4. Keep the original structure intact including headings and subheadings
     5. Focus on quality content that meaningfully enhances the essay
+    6. Add to each section of the essay to ensure a balanced extension
     
     IMPORTANT INSTRUCTIONS:
     - Return the COMPLETE essay with your additions seamlessly integrated
     - Make sure the final essay is at least ${targetWordCount} words
-    - Don't include placeholder text or meta commentary about the essay
-    - Don't add "Introduction" or "Conclusion" headers - keep the formatting consistent
-    - Don't include a works cited section
+    - Do NOT include placeholder text or meta commentary about the essay
+    - Do NOT include a works cited section or a word count at the end
     
     Original essay:
     ${originalEssay}

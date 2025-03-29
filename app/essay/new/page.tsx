@@ -6,6 +6,29 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import Link from 'next/link';
 import React from 'react';
 
+function parseMarkdown(content: string): string {
+  // Convert headers (#, ##, ###, etc.)
+  content = content.replace(/^###### (.*$)/gm, '<h6>$1</h6>');
+  content = content.replace(/^##### (.*$)/gm, '<h5>$1</h5>');
+  content = content.replace(/^#### (.*$)/gm, '<h4>$1</h4>');
+  content = content.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+  content = content.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+  content = content.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+
+  // Convert bold (** or __)
+  content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  content = content.replace(/__(.*?)__/g, '<strong>$1</strong>');
+
+  // Convert italics (* or _)
+  content = content.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  content = content.replace(/_(.*?)_/g, '<em>$1</em>');
+
+  // Convert line breaks
+  content = content.replace(/\n/g, '<br />');
+
+  return content;
+}
+
 export default function NewEssay() {
   const router = useRouter();
   const { isAuthenticated, loading: authLoading } = useAuth();
@@ -498,7 +521,12 @@ export default function NewEssay() {
                     Citations ({citations.length})
                   </button>
                 </nav>
-                
+
+                {/* Word count display */}
+                <div className="pr-4 text-sm text-gray-600">
+                  Word Count: {generatedEssay.split(/\s+/).length}
+                </div>
+
                 {/* Action buttons */}
                 <div className="flex gap-3 pr-4">
                   <button
@@ -510,8 +538,7 @@ export default function NewEssay() {
                     </svg>
                     Regenerate
                   </button>
-                  
-                  {/* Edit button with gray styling and pencil icon (moved to the middle position) */}
+
                   <button
                     onClick={handleSaveAndEdit}
                     disabled={isSaving}
@@ -522,8 +549,7 @@ export default function NewEssay() {
                     </svg>
                     Edit
                   </button>
-                  
-                  {/* Save button with gradient styling (moved to the end) */}
+
                   <button
                     onClick={handleSave}
                     disabled={isSaving}
@@ -537,87 +563,14 @@ export default function NewEssay() {
                   </button>
                 </div>
               </div>
-              
+
               {/* Essay content or citations */}
               <div className="bg-white rounded-b-xl shadow-sm border-b border-l border-r border-gray-200 p-8 overflow-y-auto h-[calc(100vh-14rem)]">
                 {activeTab === 'content' ? (
-                  <div className="prose prose-lg max-w-none">
-                    {generatedEssay.split('\n').map((paragraph, i) => {
-                      // Skip empty paragraphs
-                      if (!paragraph.trim()) return null;
-                      
-                      // Process headers (# Heading)
-                      if (paragraph.trim().startsWith('#')) {
-                        const headerMatch = paragraph.trim().match(/^(#{1,5})\s+(.+)$/);
-                        if (headerMatch) {
-                          const level = headerMatch[1].length;
-                          const text = headerMatch[2];
-                          
-                          // Add appropriate styling based on header level
-                          let headerClassNames = "font-bold";
-                          
-                          switch(level) {
-                            case 1:
-                              headerClassNames += " text-3xl mb-6 mt-8 text-gray-800 border-b pb-2";
-                              break;
-                            case 2:
-                              headerClassNames += " text-2xl mb-5 mt-7 text-gray-800";
-                              break;
-                            case 3:
-                              headerClassNames += " text-xl mb-4 mt-6 text-gray-700";
-                              break;
-                            case 4:
-                              headerClassNames += " text-lg mb-3 mt-5 text-gray-700";
-                              break;
-                            case 5:
-                              headerClassNames += " text-base mb-2 mt-4 text-gray-600";
-                              break;
-                          }
-                          
-                          return React.createElement(
-                            `h${level}`,
-                            { key: i, className: headerClassNames },
-                            text
-                          );
-                        }
-                      }
-                      
-                      // Format paragraph with markdown elements
-                      let formattedText = paragraph;
-
-                      // Format bold text with double asterisks
-                      formattedText = formattedText.replace(
-                        /\*\*(.*?)\*\*/g, 
-                        '<strong>$1</strong>'
-                      );
-
-                      // Format bold text with double underscores
-                      formattedText = formattedText.replace(
-                        /__(.*?)__/g, 
-                        '<strong>$1</strong>'
-                      );
-
-                      // Format italic text with single asterisks (after handling double)
-                      formattedText = formattedText.replace(
-                        /\*(.*?)\*/g,
-                        '<em>$1</em>'
-                      );
-
-                      // Format italic text with single underscores
-                      formattedText = formattedText.replace(
-                        /_(.*?)_/g,
-                        '<em>$1</em>'
-                      );
-
-                      return (
-                        <p 
-                          key={i} 
-                          className="mb-4" 
-                          dangerouslySetInnerHTML={{ __html: formattedText }}
-                        />
-                      );
-                    })}
-                  </div>
+                  <div
+                    className="prose prose-lg max-w-none"
+                    dangerouslySetInnerHTML={{ __html: parseMarkdown(generatedEssay) }}
+                  ></div>
                 ) : (
                   <div className="space-y-4">
                     {citations.length > 0 ? (
@@ -626,9 +579,9 @@ export default function NewEssay() {
                         <ol className="list-decimal pl-5 space-y-2">
                           {citations.map((citation, index) => (
                             <li key={index}>
-                              <a 
-                                href={citation} 
-                                target="_blank" 
+                              <a
+                                href={citation}
+                                target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-blue-600 hover:text-blue-800 hover:underline break-words"
                               >
@@ -643,6 +596,37 @@ export default function NewEssay() {
                     )}
                   </div>
                 )}
+                <div className="prose prose-lg max-w-none">
+                  <style>
+                    {`
+                      h1 {
+                        font-size: 1.875rem; /* Tailwind's text-3xl */
+                        font-weight: 700; /* Tailwind's font-bold */
+                        margin-bottom: 1rem;
+                      }
+                      h2 {
+                        font-size: 1.5rem; /* Tailwind's text-2xl */
+                        font-weight: 700; /* Tailwind's font-bold */
+                        margin-bottom: 0.75rem;
+                      }
+                      h3 {
+                        font-size: 1.25rem; /* Tailwind's text-xl */
+                        font-weight: 600; /* Tailwind's font-semibold */
+                        margin-bottom: 0.5rem;
+                      }
+                      strong {
+                        font-weight: 700; /* Tailwind's font-bold */
+                      }
+                      em {
+                        font-style: italic; /* Tailwind's italic */
+                      }
+                      p {
+                        margin-bottom: 1rem; /* Tailwind's mb-4 */
+                        line-height: 1.75; /* Tailwind's leading-relaxed */
+                      }
+                    `}
+                  </style>
+                </div>
               </div>
             </>
           </div>
