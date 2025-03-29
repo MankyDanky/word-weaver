@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     - Have a clear introduction with a thesis statement
     - Include well-developed body paragraphs with supporting evidence
     - End with a conclusion that synthesizes the main points
-    - Include citations for any factual claims or quotes
+    - Include citations for any factual claims or quotes, but don't make the works cited at the bottom yet
     - Be written in ${style} style
     
     Please provide a coherent, well-researched essay with proper structure and flow.`;

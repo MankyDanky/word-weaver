@@ -7,13 +7,13 @@ import mongoose from 'mongoose';
 // GET specific essay by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     // Connect to the database
     await dbConnect();
     
-    const id = params.id;
+    const { id } = context.params;
     
     // Validate ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -24,7 +24,7 @@ export async function GET(
     }
     
     // Get user ID from JWT token
-    const userId = getUserIdFromToken(request);
+    const userId = await getUserIdFromToken(request);
     
     if (!userId) {
       return NextResponse.json(
@@ -60,13 +60,13 @@ export async function GET(
 // DELETE essay by ID
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     // Connect to the database
     await dbConnect();
     
-    const id = params.id;
+    const { id } = context.params;
     
     // Validate ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -77,7 +77,7 @@ export async function DELETE(
     }
     
     // Get user ID from JWT token
-    const userId = getUserIdFromToken(request);
+    const userId = await getUserIdFromToken(request);
     
     if (!userId) {
       return NextResponse.json(
@@ -115,13 +115,13 @@ export async function DELETE(
 // Update essay by ID
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     // Connect to the database
     await dbConnect();
     
-    const id = params.id;
+    const { id } = context.params;
     
     // Validate ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -132,7 +132,7 @@ export async function PUT(
     }
     
     // Get user ID from JWT token
-    const userId = getUserIdFromToken(request);
+    const userId = await getUserIdFromToken(request);
     
     if (!userId) {
       return NextResponse.json(
