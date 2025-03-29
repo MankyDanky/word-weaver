@@ -111,7 +111,7 @@ async function getEssayReview(content: string, title: string) {
     
     const data = await response.json();
     let reviewContent = data.choices[0].message.content;
-    
+    console.log('AI review:', reviewContent);
     // Parse the JSON response
     try {
       // Clean the response to handle cases where the AI includes extra text
@@ -121,7 +121,7 @@ async function getEssayReview(content: string, title: string) {
       if (reviewContent.includes('```')) {
         reviewContent = reviewContent.match(/```(?:json)?\s*([\s\S]*?)\s*```/)[1];
       }
-      
+     
       const reviewObject = JSON.parse(reviewContent);
       
       // Validate the expected structure

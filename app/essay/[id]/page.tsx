@@ -18,6 +18,18 @@ interface Essay {
   updated_at: string;
 }
 
+interface EssayRatings {
+  grammar: number;
+  structure: number;
+  substance: number;
+  overall: number;
+}
+
+interface EssayReview {
+  ratings: EssayRatings;
+  suggestions: string[];
+}
+
 export default function EssayEditor({ params }: { params: { id: string } }) {
   const router = useRouter();
   const { isAuthenticated, loading: authLoading } = useAuth();
@@ -31,6 +43,15 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
   const [isAppendingWorksCited, setIsAppendingWorksCited] = useState(false);
   const [citationStyle, setCitationStyle] = useState('MLA'); // Default to MLA
   const previewBottomRef = useRef<HTMLDivElement | null>(null);
+
+  // New state variables for sidebar tabs and essay review
+  const [activeSidebarTab, setActiveSidebarTab] = useState<'details' | 'review' | 'tweak'>('details');
+  const [essayReview, setEssayReview] = useState<EssayReview | null>(null);
+  const [isReviewing, setIsReviewing] = useState(false);
+
+  // Add these state variables
+  const [tweakFeedback, setTweakFeedback] = useState('');
+  const [isTweaking, setIsTweaking] = useState(false);
 
   // Fetch essay data
   useEffect(() => {
@@ -319,6 +340,77 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
     URL.revokeObjectURL(url);
   };
 
+  const handleRequestReview = async () => {
+    if (!essay) return;
+    
+    setIsReviewing(true);
+    try {
+      const response = await fetch('/api/essay/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: editedContent,
+          title: essay.topic
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate essay review');
+      }
+      
+      const data = await response.json();
+      setEssayReview(data);
+      
+      // Switch to the review tab to show results
+      setActiveSidebarTab('review');
+    } catch (err) {
+      console.error(err);
+      setError('Error generating essay review');
+    } finally {
+      setIsReviewing(false);
+    }
+  };
+
+  // Add this function to handle essay tweaking
+  const handleTweakEssay = async () => {
+    if (!essay || !tweakFeedback.trim()) return;
+    
+    setIsTweaking(true);
+    try {
+      const response = await fetch('/api/essay/tweak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: editedContent,
+          feedback: tweakFeedback,
+          title: essay.topic
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to tweak essay');
+      }
+      
+      // Get the improved essay as plain text
+      const improvedEssay = await response.text();
+      
+      // Update the essay content
+      setEditedContent(improvedEssay);
+      calculateWordCount(improvedEssay);
+      
+      // Switch to the edit tab to show the updated content
+      setActiveEditorTab('edit');
+      
+      // Clear the feedback input
+      setTweakFeedback('');
+    } catch (err) {
+      console.error(err);
+      setError('Error tweaking essay');
+    } finally {
+      setIsTweaking(false);
+    }
+  };
+
   if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex justify-center items-center">
@@ -369,140 +461,347 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
             {/* Sidebar */}
             <div className="lg:w-64 shrink-0">
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sticky top-8">
-                <h2 className="font-semibold text-lg text-gray-800 mb-4">Essay Details</h2>
-
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Topic</h3>
-                    <p className="text-gray-800">{essay.topic}</p>
-                  </div>
-
-                  {essay.thesis && (
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-500">Thesis</h3>
-                      <p className="text-gray-800">{essay.thesis}</p>
-                    </div>
-                  )}
-
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Created</h3>
-                    <p className="text-gray-800">{formatDate(essay.created_at)}</p>
-                  </div>
-
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Words</h3>
-                    <p className="text-gray-800">{wordCount} words</p>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-medium text-gray-500">Status</h3>
-                      {isSaving && (
-                        <div className="inline-block h-4 w-4">
-                          <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-indigo-500"></div>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {/* Status toggle buttons */}
-                      <button
-                        onClick={() => handleStatusChange('draft')}
-                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                          essay.status === 'draft'
-                            ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        Draft
-                      </button>
-
-                      <button
-                        onClick={() => handleStatusChange('in-progress')}
-                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                          essay.status === 'in-progress'
-                            ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        In Progress
-                      </button>
-
-                      <button
-                        onClick={() => handleStatusChange('complete')}
-                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                          essay.status === 'complete'
-                            ? 'bg-green-100 text-green-800 border border-green-200'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        Complete
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="pt-4">
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Formatting</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {/* Bold button */}
-                      <button
-                        onClick={() => addFormatting('bold')}
-                        className="w-9 h-9 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200"
-                        title="Bold"
-                      >
-                        <span className="font-bold text-lg">B</span>
-                      </button>
-
-                      {/* Italic button */}
-                      <button
-                        onClick={() => addFormatting('italic')}
-                        className="w-9 h-9 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200"
-                        title="Italic"
-                      >
-                        <span className="italic text-lg">I</span>
-                      </button>
-
-                      {/* Heading 1 button */}
-                      <button
-                        onClick={() => addFormatting('h1')}
-                        className="w-9 h-9 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200"
-                        title="Heading 1"
-                      >
-                        <span className="font-bold">H1</span>
-                      </button>
-
-                      {/* Heading 2 button */}
-                      <button
-                        onClick={() => addFormatting('h2')}
-                        className="w-9 h-9 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200"
-                        title="Heading 2"
-                      >
-                        <span className="font-bold text-sm">H2</span>
-                      </button>
-
-                      {/* Heading 3 button */}
-                      <button
-                        onClick={() => addFormatting('h3')}
-                        className="w-9 h-9 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200"
-                        title="Heading 3"
-                      >
-                        <span className="font-bold text-xs">H3</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-gray-100 mt-4">
-                    <button
-                      onClick={handleDownloadMarkdown}
-                      className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-gradient-to-r from-blue-400 to-indigo-600 hover:from-blue-500 hover:to-indigo-700 text-white rounded-md text-sm font-medium shadow-md transition-all"
-                      title="Download as Markdown"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
-                      Download
-                    </button>
-                  </div>
+                {/* Sidebar tabs navigation */}
+                <div className="flex border-b border-gray-200 mb-4">
+                  <button
+                    onClick={() => setActiveSidebarTab('details')}
+                    className={`pb-2 px-4 text-sm font-medium ${
+                      activeSidebarTab === 'details'
+                        ? 'border-b-2 border-indigo-500 text-indigo-600'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Details
+                  </button>
+                  <button
+                    onClick={() => setActiveSidebarTab('review')}
+                    className={`pb-2 px-4 text-sm font-medium ${
+                      activeSidebarTab === 'review'
+                        ? 'border-b-2 border-indigo-500 text-indigo-600'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Review
+                  </button>
+                  <button
+                    onClick={() => setActiveSidebarTab('tweak')}
+                    className={`pb-2 px-4 text-sm font-medium ${
+                      activeSidebarTab === 'tweak'
+                        ? 'border-b-2 border-indigo-500 text-indigo-600'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Tweak
+                  </button>
                 </div>
+
+                {/* Details tab content - existing content */}
+                {activeSidebarTab === 'details' && (
+                  <div className="space-y-4">
+                    <h2 className="font-semibold text-lg text-gray-800">Essay Details</h2>
+                    
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">Topic</h3>
+                      <p className="text-gray-800">{essay.topic}</p>
+                    </div>
+
+                    {essay.thesis && (
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500">Thesis</h3>
+                        <p className="text-gray-800">{essay.thesis}</p>
+                      </div>
+                    )}
+
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">Created</h3>
+                      <p className="text-gray-800">{formatDate(essay.created_at)}</p>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">Words</h3>
+                      <p className="text-gray-800">{wordCount} words</p>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-medium text-gray-500">Status</h3>
+                        {isSaving && (
+                          <div className="inline-block h-4 w-4">
+                            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-indigo-500"></div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {/* Status toggle buttons */}
+                        <button
+                          onClick={() => handleStatusChange('draft')}
+                          className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                            essay.status === 'draft'
+                              ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          Draft
+                        </button>
+
+                        <button
+                          onClick={() => handleStatusChange('in-progress')}
+                          className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                            essay.status === 'in-progress'
+                              ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          In Progress
+                        </button>
+
+                        <button
+                          onClick={() => handleStatusChange('complete')}
+                          className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                            essay.status === 'complete'
+                              ? 'bg-green-100 text-green-800 border border-green-200'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          Complete
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="pt-4">
+                      <h3 className="text-sm font-medium text-gray-500 mb-2">Formatting</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {/* Bold button */}
+                        <button
+                          onClick={() => addFormatting('bold')}
+                          className="w-9 h-9 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200"
+                          title="Bold"
+                        >
+                          <span className="font-bold text-lg">B</span>
+                        </button>
+
+                        {/* Italic button */}
+                        <button
+                          onClick={() => addFormatting('italic')}
+                          className="w-9 h-9 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200"
+                          title="Italic"
+                        >
+                          <span className="italic text-lg">I</span>
+                        </button>
+
+                        {/* Heading 1 button */}
+                        <button
+                          onClick={() => addFormatting('h1')}
+                          className="w-9 h-9 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200"
+                          title="Heading 1"
+                        >
+                          <span className="font-bold">H1</span>
+                        </button>
+
+                        {/* Heading 2 button */}
+                        <button
+                          onClick={() => addFormatting('h2')}
+                          className="w-9 h-9 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200"
+                          title="Heading 2"
+                        >
+                          <span className="font-bold text-sm">H2</span>
+                        </button>
+
+                        {/* Heading 3 button */}
+                        <button
+                          onClick={() => addFormatting('h3')}
+                          className="w-9 h-9 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200"
+                          title="Heading 3"
+                        >
+                          <span className="font-bold text-xs">H3</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-gray-100 mt-4">
+                      <button
+                        onClick={handleDownloadMarkdown}
+                        className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-gradient-to-r from-blue-400 to-indigo-600 hover:from-blue-500 hover:to-indigo-700 text-white rounded-md text-sm font-medium shadow-md transition-all"
+                        title="Download as Markdown"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Download
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Review tab content */}
+                {activeSidebarTab === 'review' && (
+                  <div className="space-y-4">
+                    <h2 className="font-semibold text-lg text-gray-800">Essay Review</h2>
+                    
+                    {!essayReview ? (
+                      <div className="space-y-4">
+                        <p className="text-sm text-gray-600">
+                          Get an AI-powered review of your essay to help improve your writing.
+                        </p>
+                        
+                        <button
+                          onClick={handleRequestReview}
+                          disabled={isReviewing}
+                          className={`w-full flex items-center justify-center gap-2 py-2 px-3 bg-gradient-to-r from-blue-400 to-indigo-600 hover:from-blue-500 hover:to-indigo-700 text-white rounded-md text-sm font-medium shadow-md transition-all ${
+                            isReviewing ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                        >
+                          {isReviewing ? (
+                            <div className="flex items-center">
+                              <svg className="animate-spin h-4 w-4 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                              </svg>
+                              Reviewing...
+                            </div>
+                          ) : (
+                            <>Review Essay</>
+                          )}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {/* Scores display */}
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-500 mb-2">Scores</h3>
+                          
+                          <div className="space-y-2">
+                            {/* Grammar score */}
+                            <div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs text-gray-500">Grammar</span>
+                                <span className="text-xs font-medium">{essayReview.ratings.grammar}/10</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                                <div 
+                                  className="bg-blue-600 h-1.5 rounded-full" 
+                                  style={{ width: `${essayReview.ratings.grammar * 10}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                            
+                            {/* Structure score */}
+                            <div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs text-gray-500">Structure</span>
+                                <span className="text-xs font-medium">{essayReview.ratings.structure}/10</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                                <div 
+                                  className="bg-blue-600 h-1.5 rounded-full" 
+                                  style={{ width: `${essayReview.ratings.structure * 10}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                            
+                            {/* Substance score */}
+                            <div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs text-gray-500">Substance</span>
+                                <span className="text-xs font-medium">{essayReview.ratings.substance}/10</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                                <div 
+                                  className="bg-blue-600 h-1.5 rounded-full" 
+                                  style={{ width: `${essayReview.ratings.substance * 10}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                            
+                            {/* Overall score */}
+                            <div className="pt-1 border-t border-gray-100">
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs font-medium text-gray-700">Overall</span>
+                                <span className="text-xs font-bold">{essayReview.ratings.overall}/10</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                                <div 
+                                  className="bg-indigo-600 h-2 rounded-full" 
+                                  style={{ width: `${essayReview.ratings.overall * 10}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Suggestions */}
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-500 mb-2">Suggestions</h3>
+                          <ul className="space-y-1.5">
+                            {essayReview.suggestions.map((suggestion, index) => (
+                              <li key={index} className="text-xs text-gray-700 flex">
+                                <span className="text-indigo-500 mr-1.5">•</span>
+                                <span>{suggestion}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        
+                        {/* Request new review button */}
+                        <button
+                          onClick={handleRequestReview}
+                          disabled={isReviewing}
+                          className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-xs font-medium transition-all mt-2"
+                        >
+                          {isReviewing ? "Reviewing..." : "Request New Review"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Tweak tab content */}
+                {activeSidebarTab === 'tweak' && (
+                  <div className="space-y-4">
+                    <h2 className="font-semibold text-lg text-gray-800">Tweak Essay</h2>
+                    
+                    <div className="space-y-4">
+                      <p className="text-sm text-gray-600">
+                        Provide feedback on how to improve your essay. The AI will apply targeted improvements based on your feedback.
+                      </p>
+                      
+                      <div>
+                        <label htmlFor="tweak-feedback" className="block text-sm font-medium text-gray-700 mb-1">
+                          Feedback
+                        </label>
+                        <textarea
+                          id="tweak-feedback"
+                          value={tweakFeedback}
+                          onChange={(e) => setTweakFeedback(e.target.value)}
+                          placeholder="e.g., Improve transitions between paragraphs, strengthen the conclusion..."
+                          rows={5}
+                          className="w-full rounded-md border border-gray-300 shadow-sm p-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                          disabled={isTweaking}
+                        ></textarea>
+                      </div>
+                      
+                      <button
+                        onClick={handleTweakEssay}
+                        disabled={isTweaking || !tweakFeedback.trim()}
+                        className={`w-full flex items-center justify-center gap-2 py-2 px-3 bg-gradient-to-r from-blue-400 to-indigo-600 hover:from-blue-500 hover:to-indigo-700 text-white rounded-md text-sm font-medium shadow-md transition-all ${
+                          isTweaking || !tweakFeedback.trim() ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      >
+                        {isTweaking ? (
+                          <div className="flex items-center">
+                            <svg className="animate-spin h-4 w-4 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                            Tweaking...
+                          </div>
+                        ) : (
+                          <>Improve Essay</>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -633,8 +932,7 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
                                   <path
                                     className="opacity-75"
                                     fill="currentColor"
-                                    d="M4 12a8 8 0 018-8v8H4z"
-                                  ></path>
+                                    d="M4 12a8 8 0 018-8v8H4z"></path>
                                 </svg>
                                 Appending...
                               </div>
