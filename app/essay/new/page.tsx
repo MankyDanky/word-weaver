@@ -10,8 +10,8 @@ export default function NewEssay() {
   const router = useRouter();
   const { isAuthenticated, loading: authLoading } = useAuth();
   
-  // View mode state (input or essay)
-  const [viewMode, setViewMode] = useState<'input' | 'essay'>('input');
+  // View mode state (input, loading, or essay)
+  const [viewMode, setViewMode] = useState<'input' | 'loading' | 'essay'>('input');
   
   // Form state
   const [topic, setTopic] = useState('');
@@ -35,6 +35,39 @@ export default function NewEssay() {
       router.push('/login');
     }
   }, [authLoading, isAuthenticated, router]);
+
+  useEffect(() => {
+    // Updated animation styles for black pen
+    const style = document.createElement('style');
+    style.innerHTML = `
+      @keyframes write {
+        0% { stroke-dashoffset: 240; }
+        100% { stroke-dashoffset: 0; }
+      }
+
+      @keyframes move {
+        0%, 100% { transform: translate(0, 0) rotate(3deg); }
+        25% { transform: translate(-2px, -1px) rotate(2deg); }
+        50% { transform: translate(-4px, -2px) rotate(1deg); }
+        75% { transform: translate(-2px, -1px) rotate(2deg); }
+      }
+
+      .pen {
+        animation: move 1s ease-in-out infinite;
+        transform-origin: 110px 85px;
+        transform-box: fill-box;
+      }
+
+      .scribble {
+        animation: write 2.5s linear infinite alternate;
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
   
   // Add argument field
   const handleAddArgument = () => {
@@ -55,7 +88,7 @@ export default function NewEssay() {
     setArguments(newArguments);
   };
   
-  // Handle essay generation
+  // Enhanced handleGenerate function with improved loading state handling
   const handleGenerate = async () => {
     // Validate form
     if (!topic.trim()) {
@@ -66,10 +99,17 @@ export default function NewEssay() {
     // Filter out empty arguments
     const filteredArguments = arguments_.filter(arg => arg.trim() !== '');
     
+    // Set loading state FIRST (before setting isGenerating)
+    setViewMode('loading');
     setIsGenerating(true);
     setError(null);
     
+    // Record the start time for minimum display duration
+    const startTime = Date.now();
+    const MIN_LOADING_TIME = 3000; // 3 seconds minimum display time
+    
     try {
+      // Make the API request
       const response = await fetch('/api/write', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -86,22 +126,38 @@ export default function NewEssay() {
         throw new Error(data.error || 'Failed to generate essay');
       }
       
+      // Process the response
       const data = await response.json();
       setGeneratedEssay(data.content);
       setCitations(data.citations || []);
       setActiveTab('content');
       
-      // Switch to essay view mode after successful generation
+      // Ensure the loading animation is shown for at least MIN_LOADING_TIME
+      const elapsedTime = Date.now() - startTime;
+      if (elapsedTime < MIN_LOADING_TIME) {
+        await new Promise(resolve => setTimeout(resolve, MIN_LOADING_TIME - elapsedTime));
+      }
+      
+      // Only then switch to essay view
       setViewMode('essay');
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'An error occurred while generating the essay');
+      
+      // Ensure loading animation shows for minimum time even on error
+      const elapsedTime = Date.now() - startTime;
+      if (elapsedTime < MIN_LOADING_TIME) {
+        await new Promise(resolve => setTimeout(resolve, MIN_LOADING_TIME - elapsedTime));
+      }
+      
+      // Go back to input view on error
+      setViewMode('input');
     } finally {
       setIsGenerating(false);
     }
   };
   
-  // Handle essay saving
+  // Fixed handleSave function
   const handleSave = async () => {
     if (!generatedEssay || isGenerating) {
       return;
@@ -126,14 +182,24 @@ export default function NewEssay() {
       });
       
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to save essay');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save essay');
       }
       
+      // Read response body ONCE
       const data = await response.json();
-      return data.essay._id; // Return the essay ID for navigation
+      console.log('Essay saved successfully, redirecting to dashboard...');
+      
+      // Make sure we have essay ID before redirecting
+      if (data.essay && data.essay._id) {
+        // Force redirect with replace to avoid history issues
+        router.push('/dashboard');
+        return data.essay._id;
+      } else {
+        throw new Error('Invalid response from server');
+      }
     } catch (err) {
-      console.error(err);
+      console.error('Error saving essay:', err);
       setError(err instanceof Error ? err.message : 'An error occurred while saving the essay');
       return null;
     } finally {
@@ -141,7 +207,7 @@ export default function NewEssay() {
     }
   };
   
-  // Handle save and edit
+  // Keep handleSaveAndEdit as is - it will still redirect to the essay page
   const handleSaveAndEdit = async () => {
     const essayId = await handleSave();
     if (essayId) {
@@ -304,189 +370,236 @@ export default function NewEssay() {
           </div>
         )}
         
+        {/* Loading view with pen animation */}
+        {viewMode === 'loading' && (
+          <div className="bg-white rounded-xl shadow-sm p-12 border border-gray-200 max-w-3xl mx-auto">
+            <div className="flex flex-col items-center justify-center">
+              {/* Pen writing animation */}
+              <div className="mb-8 w-48 h-48 relative">
+                <svg className="pen-animation" width="100%" height="100%" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                  {/* Paper */}
+                  <rect x="40" y="40" width="120" height="140" fill="#f8f8f8" stroke="#e0e0e0" strokeWidth="1" />
+                  
+                  {/* Paper lines */}
+                  <line x1="50" y1="60" x2="150" y2="60" stroke="#e0e0e0" strokeWidth="1" />
+                  <line x1="50" y1="80" x2="150" y2="80" stroke="#e0e0e0" strokeWidth="1" />
+                  <line x1="50" y1="100" x2="150" y2="100" stroke="#e0e0e0" strokeWidth="1" />
+                  <line x1="50" y1="120" x2="150" y2="120" stroke="#e0e0e0" strokeWidth="1" />
+                  <line x1="50" y1="140" x2="150" y2="140" stroke="#e0e0e0" strokeWidth="1" />
+                  <line x1="50" y1="160" x2="150" y2="160" stroke="#e0e0e0" strokeWidth="1" />
+                  
+                  {/* Scribble path that will be drawn - NOW BEFORE the pen */}
+                  <path 
+                    className="scribble" 
+                    d="M60,70 Q70,65 80,70 T100,70 T120,70 T140,70 M60,90 Q70,85 80,90 T100,90 T120,90 T140,90 M60,110 Q70,105 80,110 T100,110 T120,110 T140,110" 
+                    fill="none" 
+                    stroke="#3949AB" 
+                    strokeWidth="2"
+                    strokeDasharray="240"
+                    strokeDashoffset="240"
+                  />
+                  
+                  {/* Simple black pen - AFTER the scribble so it appears on top */}
+                  <g className="pen">
+                    {/* Pen body */}
+                    <path d="M85,45 L155,115 L145,125 L75,55 Z" fill="#111111" />
+                    
+                    {/* Pen tip */}
+                    <path d="M75,55 L65,65 L70,70 L80,60 Z" fill="#000000" />
+                    
+                    {/* Pen cap highlight */}
+                    <path d="M145,125 L155,115 L160,120 L150,130 Z" fill="#333333" />
+                    
+                    {/* Pen clip */}
+                    <path d="M130,90 L135,95 L125,115 L120,110 Z" fill="#444444" />
+                  </g>
+                </svg>
+              </div>
+              
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">Generating Your Essay</h3>
+              <p className="text-gray-600 text-center mb-2">This may take a minute or two...</p>
+              <p className="text-gray-500 text-sm text-center max-w-sm">
+                Our AI is crafting a thoughtful essay on "{topic}"{thesis ? ` with your thesis: "${thesis}"` : ""}.
+              </p>
+            </div>
+          </div>
+        )}
+        
         {/* Essay view mode - Full width essay with tabs */}
         {viewMode === 'essay' && (
           <div className="flex flex-col">
-            {isGenerating ? (
-              <div className="bg-white rounded-xl shadow-sm p-12 border border-gray-200 flex flex-col items-center justify-center h-96">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mb-4"></div>
-                <p className="text-gray-500">Generating your essay...</p>
-                <p className="text-gray-400 text-sm mt-2">This may take up to a minute</p>
-              </div>
-            ) : (
-              <>
-                {/* Tab navigation */}
-                <div className="bg-white rounded-t-xl border-t border-l border-r border-gray-200 flex justify-between items-center">
-                  <nav className="flex">
-                    <button
-                      onClick={() => setActiveTab('content')}
-                      className={`py-4 px-6 text-sm font-medium ${
-                        activeTab === 'content'
-                          ? 'border-b-2 border-indigo-500 text-indigo-600'
-                          : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                      }`}
-                    >
-                      Essay Content
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('citations')}
-                      className={`py-4 px-6 text-sm font-medium ${
-                        activeTab === 'citations'
-                          ? 'border-b-2 border-indigo-500 text-indigo-600'
-                          : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                      }`}
-                    >
-                      Citations ({citations.length})
-                    </button>
-                  </nav>
-                  
-                  {/* Action buttons */}
-                  <div className="flex gap-3 pr-4">
-                    <button
-                      onClick={handleBackToInput}
-                      className="flex items-center text-gray-600 hover:text-gray-800 py-2 px-4 text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
-                      </svg>
-                      Regenerate
-                    </button>
-                    
-                    {/* Edit button with gray styling and pencil icon (moved to the middle position) */}
-                    <button
-                      onClick={handleSaveAndEdit}
-                      disabled={isSaving}
-                      className="flex items-center text-gray-700 hover:text-gray-900 py-2 px-4 text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                      </svg>
-                      Edit
-                    </button>
-                    
-                    {/* Save button with gradient styling (moved to the end) */}
-                    <button
-                      onClick={handleSave}
-                      disabled={isSaving}
-                      className={`py-2 px-4 rounded-md text-sm font-medium text-white ${
-                        isSaving
-                          ? "bg-indigo-300 cursor-not-allowed"
-                          : "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
-                      }`}
-                    >
-                      {isSaving ? "Saving..." : "Save Draft"}
-                    </button>
-                  </div>
-                </div>
+            <>
+              {/* Tab navigation */}
+              <div className="bg-white rounded-t-xl border-t border-l border-r border-gray-200 flex justify-between items-center">
+                <nav className="flex">
+                  <button
+                    onClick={() => setActiveTab('content')}
+                    className={`py-4 px-6 text-sm font-medium ${
+                      activeTab === 'content'
+                        ? 'border-b-2 border-indigo-500 text-indigo-600'
+                        : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    Essay Content
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('citations')}
+                    className={`py-4 px-6 text-sm font-medium ${
+                      activeTab === 'citations'
+                        ? 'border-b-2 border-indigo-500 text-indigo-600'
+                        : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    Citations ({citations.length})
+                  </button>
+                </nav>
                 
-                {/* Essay content or citations */}
-                <div className="bg-white rounded-b-xl shadow-sm border-b border-l border-r border-gray-200 p-8 overflow-y-auto h-[calc(100vh-14rem)]">
-                  {activeTab === 'content' ? (
-                    <div className="prose prose-lg max-w-none">
-                      {generatedEssay.split('\n').map((paragraph, i) => {
-                        // Skip empty paragraphs
-                        if (!paragraph.trim()) return null;
-                        
-                        // Process headers (# Heading)
-                        if (paragraph.trim().startsWith('#')) {
-                          const headerMatch = paragraph.trim().match(/^(#{1,5})\s+(.+)$/);
-                          if (headerMatch) {
-                            const level = headerMatch[1].length;
-                            const text = headerMatch[2];
-                            
-                            // Add appropriate styling based on header level
-                            let headerClassNames = "font-bold";
-                            
-                            switch(level) {
-                              case 1:
-                                headerClassNames += " text-3xl mb-6 mt-8 text-gray-800 border-b pb-2";
-                                break;
-                              case 2:
-                                headerClassNames += " text-2xl mb-5 mt-7 text-gray-800";
-                                break;
-                              case 3:
-                                headerClassNames += " text-xl mb-4 mt-6 text-gray-700";
-                                break;
-                              case 4:
-                                headerClassNames += " text-lg mb-3 mt-5 text-gray-700";
-                                break;
-                              case 5:
-                                headerClassNames += " text-base mb-2 mt-4 text-gray-600";
-                                break;
-                            }
-                            
-                            return React.createElement(
-                              `h${level}`,
-                              { key: i, className: headerClassNames },
-                              text
-                            );
-                          }
-                        }
-                        
-                        // Format paragraph with markdown elements
-                        let formattedText = paragraph;
-
-                        // Format bold text with double asterisks
-                        formattedText = formattedText.replace(
-                          /\*\*(.*?)\*\*/g, 
-                          '<strong>$1</strong>'
-                        );
-
-                        // Format bold text with double underscores
-                        formattedText = formattedText.replace(
-                          /__(.*?)__/g, 
-                          '<strong>$1</strong>'
-                        );
-
-                        // Format italic text with single asterisks (after handling double)
-                        formattedText = formattedText.replace(
-                          /\*(.*?)\*/g,
-                          '<em>$1</em>'
-                        );
-
-                        // Format italic text with single underscores
-                        formattedText = formattedText.replace(
-                          /_(.*?)_/g,
-                          '<em>$1</em>'
-                        );
-
-                        return (
-                          <p 
-                            key={i} 
-                            className="mb-4" 
-                            dangerouslySetInnerHTML={{ __html: formattedText }}
-                          />
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {citations.length > 0 ? (
-                        <>
-                          <h3 className="font-medium text-gray-800 mb-3">Sources</h3>
-                          <ol className="list-decimal pl-5 space-y-2">
-                            {citations.map((citation, index) => (
-                              <li key={index}>
-                                <a 
-                                  href={citation} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="text-blue-600 hover:text-blue-800 hover:underline break-words"
-                                >
-                                  {citation}
-                                </a>
-                              </li>
-                            ))}
-                          </ol>
-                        </>
-                      ) : (
-                        <p className="text-gray-500 italic">No citations available for this essay.</p>
-                      )}
-                    </div>
-                  )}
+                {/* Action buttons */}
+                <div className="flex gap-3 pr-4">
+                  <button
+                    onClick={handleBackToInput}
+                    className="flex items-center text-gray-600 hover:text-gray-800 py-2 px-4 text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                    </svg>
+                    Regenerate
+                  </button>
+                  
+                  {/* Edit button with gray styling and pencil icon (moved to the middle position) */}
+                  <button
+                    onClick={handleSaveAndEdit}
+                    disabled={isSaving}
+                    className="flex items-center text-gray-700 hover:text-gray-900 py-2 px-4 text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                    Edit
+                  </button>
+                  
+                  {/* Save button with gradient styling (moved to the end) */}
+                  <button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className={`py-2 px-4 rounded-md text-sm font-medium text-white ${
+                      isSaving
+                        ? "bg-indigo-300 cursor-not-allowed"
+                        : "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+                    }`}
+                  >
+                    {isSaving ? "Saving..." : "Save Draft"}
+                  </button>
                 </div>
-              </>
-            )}
+              </div>
+              
+              {/* Essay content or citations */}
+              <div className="bg-white rounded-b-xl shadow-sm border-b border-l border-r border-gray-200 p-8 overflow-y-auto h-[calc(100vh-14rem)]">
+                {activeTab === 'content' ? (
+                  <div className="prose prose-lg max-w-none">
+                    {generatedEssay.split('\n').map((paragraph, i) => {
+                      // Skip empty paragraphs
+                      if (!paragraph.trim()) return null;
+                      
+                      // Process headers (# Heading)
+                      if (paragraph.trim().startsWith('#')) {
+                        const headerMatch = paragraph.trim().match(/^(#{1,5})\s+(.+)$/);
+                        if (headerMatch) {
+                          const level = headerMatch[1].length;
+                          const text = headerMatch[2];
+                          
+                          // Add appropriate styling based on header level
+                          let headerClassNames = "font-bold";
+                          
+                          switch(level) {
+                            case 1:
+                              headerClassNames += " text-3xl mb-6 mt-8 text-gray-800 border-b pb-2";
+                              break;
+                            case 2:
+                              headerClassNames += " text-2xl mb-5 mt-7 text-gray-800";
+                              break;
+                            case 3:
+                              headerClassNames += " text-xl mb-4 mt-6 text-gray-700";
+                              break;
+                            case 4:
+                              headerClassNames += " text-lg mb-3 mt-5 text-gray-700";
+                              break;
+                            case 5:
+                              headerClassNames += " text-base mb-2 mt-4 text-gray-600";
+                              break;
+                          }
+                          
+                          return React.createElement(
+                            `h${level}`,
+                            { key: i, className: headerClassNames },
+                            text
+                          );
+                        }
+                      }
+                      
+                      // Format paragraph with markdown elements
+                      let formattedText = paragraph;
+
+                      // Format bold text with double asterisks
+                      formattedText = formattedText.replace(
+                        /\*\*(.*?)\*\*/g, 
+                        '<strong>$1</strong>'
+                      );
+
+                      // Format bold text with double underscores
+                      formattedText = formattedText.replace(
+                        /__(.*?)__/g, 
+                        '<strong>$1</strong>'
+                      );
+
+                      // Format italic text with single asterisks (after handling double)
+                      formattedText = formattedText.replace(
+                        /\*(.*?)\*/g,
+                        '<em>$1</em>'
+                      );
+
+                      // Format italic text with single underscores
+                      formattedText = formattedText.replace(
+                        /_(.*?)_/g,
+                        '<em>$1</em>'
+                      );
+
+                      return (
+                        <p 
+                          key={i} 
+                          className="mb-4" 
+                          dangerouslySetInnerHTML={{ __html: formattedText }}
+                        />
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {citations.length > 0 ? (
+                      <>
+                        <h3 className="font-medium text-gray-800 mb-3">Sources</h3>
+                        <ol className="list-decimal pl-5 space-y-2">
+                          {citations.map((citation, index) => (
+                            <li key={index}>
+                              <a 
+                                href={citation} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 hover:underline break-words"
+                              >
+                                {citation}
+                              </a>
+                            </li>
+                          ))}
+                        </ol>
+                      </>
+                    ) : (
+                      <p className="text-gray-500 italic">No citations available for this essay.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </>
           </div>
         )}
       </div>

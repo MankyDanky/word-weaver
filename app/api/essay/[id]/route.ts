@@ -5,15 +5,13 @@ import { getUserIdFromToken } from '@/lib/services/auth';
 import mongoose from 'mongoose';
 
 // GET specific essay by ID
-export async function GET(
-  request: NextRequest,
-  context: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, context: { params: { id: string } }) {
   try {
     // Connect to the database
     await dbConnect();
     
-    const { id } = context.params;
+    // Access id from context.params instead of destructuring in the function signature
+    const id = context.params.id;
     
     // Validate ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -58,15 +56,13 @@ export async function GET(
 }
 
 // DELETE essay by ID
-export async function DELETE(
-  request: NextRequest,
-  context: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, context: { params: { id: string } }) {
   try {
     // Connect to the database
     await dbConnect();
     
-    const { id } = context.params;
+    // Access id from context.params
+    const id = context.params.id;
     
     // Validate ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -113,15 +109,13 @@ export async function DELETE(
 }
 
 // Update essay by ID
-export async function PUT(
-  request: NextRequest,
-  context: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, context: { params: { id: string } }) {
   try {
     // Connect to the database
     await dbConnect();
     
-    const { id } = context.params;
+    // Access id from context.params
+    const id = context.params.id;
     
     // Validate ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
