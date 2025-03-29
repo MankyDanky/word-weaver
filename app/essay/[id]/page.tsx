@@ -462,10 +462,10 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
             <div className="lg:w-64 shrink-0">
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sticky top-8">
                 {/* Sidebar tabs navigation */}
-                <div className="flex border-b border-gray-200 mb-4">
+                <div className="flex justify-between border-b border-gray-200 mb-4">
                   <button
                     onClick={() => setActiveSidebarTab('details')}
-                    className={`pb-2 px-4 text-sm font-medium ${
+                    className={`pb-2 px-2 text-sm font-medium ${
                       activeSidebarTab === 'details'
                         ? 'border-b-2 border-indigo-500 text-indigo-600'
                         : 'text-gray-500 hover:text-gray-700'
@@ -475,7 +475,7 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
                   </button>
                   <button
                     onClick={() => setActiveSidebarTab('review')}
-                    className={`pb-2 px-4 text-sm font-medium ${
+                    className={`pb-2 px-2 text-sm font-medium ${
                       activeSidebarTab === 'review'
                         ? 'border-b-2 border-indigo-500 text-indigo-600'
                         : 'text-gray-500 hover:text-gray-700'
@@ -485,7 +485,7 @@ export default function EssayEditor({ params }: { params: { id: string } }) {
                   </button>
                   <button
                     onClick={() => setActiveSidebarTab('tweak')}
-                    className={`pb-2 px-4 text-sm font-medium ${
+                    className={`pb-2 px-2 text-sm font-medium ${
                       activeSidebarTab === 'tweak'
                         ? 'border-b-2 border-indigo-500 text-indigo-600'
                         : 'text-gray-500 hover:text-gray-700'
