@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/hooks/useAuth';
 
@@ -12,8 +12,7 @@ export default function Login() {
   
   const { login, loading, error, isAuthenticated } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('from') || '/dashboard';
+  const redirectTo = '/dashboard';
   
   // Redirect if already logged in
   useEffect(() => {
