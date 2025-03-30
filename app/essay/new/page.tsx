@@ -497,70 +497,111 @@ export default function NewEssay() {
         {viewMode === 'essay' && (
           <div className="flex flex-col">
             <>
-              {/* Tab navigation */}
-              <div className="bg-white rounded-t-xl border-t border-l border-r border-gray-200 flex justify-between items-center">
-                <nav className="flex">
-                  <button
-                    onClick={() => setActiveTab('content')}
-                    className={`py-4 px-6 text-sm font-medium ${
-                      activeTab === 'content'
-                        ? 'border-b-2 border-indigo-500 text-indigo-600'
-                        : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    Essay Content
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('citations')}
-                    className={`py-4 px-6 text-sm font-medium ${
-                      activeTab === 'citations'
-                        ? 'border-b-2 border-indigo-500 text-indigo-600'
-                        : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    Citations ({citations.length})
-                  </button>
-                </nav>
+              {/* Tab navigation - Responsive layout */}
+              <div className="bg-white rounded-t-xl border-t border-l border-r border-gray-200">
+                {/* Top section with tabs */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                  <nav className="flex overflow-x-auto">
+                    <button
+                      onClick={() => setActiveTab('content')}
+                      className={`py-3 px-4 sm:py-4 sm:px-6 text-sm font-medium whitespace-nowrap ${
+                        activeTab === 'content'
+                          ? 'border-b-2 border-indigo-500 text-indigo-600'
+                          : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      Essay Content
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('citations')}
+                      className={`py-3 px-4 sm:py-4 sm:px-6 text-sm font-medium whitespace-nowrap ${
+                        activeTab === 'citations'
+                          ? 'border-b-2 border-indigo-500 text-indigo-600'
+                          : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      Citations ({citations.length})
+                    </button>
+                  </nav>
 
-                {/* Word count display */}
-                <div className="pr-4 text-sm text-gray-600">
-                  Word Count: {generatedEssay.split(/\s+/).length}
+                  {/* Word count + buttons on desktop (hidden on mobile) */}
+                  <div className="hidden sm:flex items-center space-x-2 sm:px-4">
+                    <div className="text-sm text-gray-600 mr-3">
+                      Word Count: {generatedEssay.split(/\s+/).length}
+                    </div>
+                    <button
+                      onClick={handleBackToInput}
+                      className="flex items-center text-gray-600 hover:text-gray-800 py-2 px-3 text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                      </svg>
+                      Regenerate
+                    </button>
+                    <button
+                      onClick={handleSaveAndEdit}
+                      disabled={isSaving}
+                      className="flex items-center text-gray-700 hover:text-gray-900 py-2 px-3 text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                      Edit
+                    </button>
+                    <button
+                      onClick={handleSave}
+                      disabled={isSaving}
+                      className={`py-2 px-4 rounded-md text-sm font-medium text-white ${
+                        isSaving
+                          ? "bg-indigo-300 cursor-not-allowed"
+                          : "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+                      }`}
+                    >
+                      {isSaving ? "Saving..." : "Save Draft"}
+                    </button>
+                  </div>
                 </div>
 
-                {/* Action buttons */}
-                <div className="flex gap-3 pr-4">
-                  <button
-                    onClick={handleBackToInput}
-                    className="flex items-center text-gray-600 hover:text-gray-800 py-2 px-4 text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
-                    </svg>
-                    Regenerate
-                  </button>
-
-                  <button
-                    onClick={handleSaveAndEdit}
-                    disabled={isSaving}
-                    className="flex items-center text-gray-700 hover:text-gray-900 py-2 px-4 text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
-                    Edit
-                  </button>
-
-                  <button
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className={`py-2 px-4 rounded-md text-sm font-medium text-white ${
-                      isSaving
-                        ? "bg-indigo-300 cursor-not-allowed"
-                        : "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
-                    }`}
-                  >
-                    {isSaving ? "Saving..." : "Save Draft"}
-                  </button>
+                {/* Word count + Action buttons for mobile only */}
+                <div className="sm:hidden">
+                  {/* Word count - mobile only */}
+                  <div className="px-4 py-2 text-sm text-gray-600 border-t">
+                    Word Count: {generatedEssay.split(/\s+/).length}
+                  </div>
+                  
+                  {/* Action buttons - mobile only */}
+                  <div className="flex flex-wrap gap-2 p-3 border-t border-gray-100">
+                    <button
+                      onClick={handleBackToInput}
+                      className="flex items-center text-gray-600 hover:text-gray-800 py-2 px-3 text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                      </svg>
+                      Regenerate
+                    </button>
+                    <button
+                      onClick={handleSaveAndEdit}
+                      disabled={isSaving}
+                      className="flex items-center text-gray-700 hover:text-gray-900 py-2 px-3 text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                      Edit
+                    </button>
+                    <button
+                      onClick={handleSave}
+                      disabled={isSaving}
+                      className={`py-2 px-4 rounded-md text-sm font-medium text-white flex-grow ${
+                        isSaving
+                          ? "bg-indigo-300 cursor-not-allowed"
+                          : "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+                      }`}
+                    >
+                      {isSaving ? "Saving..." : "Save Draft"}
+                    </button>
+                  </div>
                 </div>
               </div>
 
